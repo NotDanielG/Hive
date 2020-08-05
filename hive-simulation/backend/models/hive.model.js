@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const hiveSchema = new Schema({
-  honey: { type: int, required: true },
-  xLocationGrid: {type: int, required: true},
-  yLocationGrid: {type: int, required: true}
+  hive: {type: String, required: true, unique: true},
+  honey: { type: Number, required: true},
+  array:{type: Array, required: true},
+  xLocationGrid: {type: Number, required: true},
+  yLocationGrid: {type: Number, required: true}
 }, {
   timestamps: true,
 });

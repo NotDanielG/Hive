@@ -18,6 +18,18 @@ connection.once('open', () => {
   console.log("MongoDB database connection established successfully");
 })
 
+const beeRouter = require('./routes/bee');
+const hiveRouter = require('./routes/hive');
+const cellRouter = require('./routes/cell');
+
+// app.use('/bee', beeRouter);
+app.use('/hive', hiveRouter);
+// app.use('/cell', cellRouter);
+
+// app.get('/', function(req, res){
+  
+// });
+
 app.listen(port, () => {
     console.log(`Server is running on port: ${port}`);
 });
