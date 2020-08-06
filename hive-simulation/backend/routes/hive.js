@@ -55,17 +55,18 @@ router.route('/add-new-hive').post((req, res) => {
 
     newHive.save()
         .then(() => {
-            res.json('Hive created! Proceeding to generate grid...');
+            
             var size = 13;
             var food_amount = 3;
             const grid = [];
 
             for(var i = 0; i < size; i++){
+                grid[i] = [];
                 for(var j =0; j < size; j++){
                     grid[i][j] = getNewCell(0, 0, false, i, j);
+                    // grid[i][j] = 0;
                 }
             }
-
             for(var i = 0; i < food_amount; i++){
                 var x, y = -1;
                 while(x == -1 || y == -1 || (x == 6, y == 6)){
@@ -77,7 +78,7 @@ router.route('/add-new-hive').post((req, res) => {
             const newGrid = new Grid({hive: str, grid: grid});
             newGrid.save()
                 .then(()=>{
-                    res.json('Grid generated!');
+                    res.json('Hive and Grid generated!');
                 })
                 .catch(err => res.status(400).json('Error: ' + err));
         })
@@ -102,13 +103,8 @@ function setRandomStat(cell){
     return cell;
 }
 function getNewCell(nectar, flowerCount, pollinated, x, y){
-    nectar = 0;
-    flowerCount = 0;
     flowerMax = getRandomNumber(100, 300);
-    pollinated = false;
-    xLocationGrid = x;
-    yLocationGrid = y;
-    cell = new Cell(nectar, flowerCount, flowerMax, pollinated, xLocationGrid, yLocationGrid);
+    cell = new Cell(nectar, flowerCount, flowerMax, pollinated, x, y);
     return cell;
 }
 class Cell{
