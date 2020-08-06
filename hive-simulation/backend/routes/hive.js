@@ -1,9 +1,32 @@
 const router = require('express').Router();
 let Hive = require('../models/hive.model');
+let Grid = require('../models/grid.model');
+
 
 let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
+router.route('/process-grid/:hive').post((req,res) => {
+    var hive = null;
+    var grid = null;
+    Hive.findOne({hive: req.params.hive})
+        .then((result) => {
+            // res.json(result.array);
+            hive = result;
+        })
+        .catch(err => res.status(400).json('Error: ' + err));
+
+    for(var i = 0; i < hive.array.length; i++){
+        switch(result.array[0].intent){
+            case('Forage'):
+                break;
+            case('Waiting'):
+                break;
+            case('Deposit'):
+                break;
+        }
+    }
+});
 router.route('/add-bee/:hive').post((req, res) => {
     Hive.findOne({hive: req.params.hive})
         .then((result)=> {
@@ -29,9 +52,38 @@ router.route('/add-new-hive').post((req, res) => {
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
+
     newHive.save()
-        .then(() => res.json('Hive created!'))
+        .then(() => {
+            res.json('Hive created! Proceeding to generate grid...');
+            var size = 13;
+            var food_amount = 3;
+            const grid = [];
+
+            for(var i = 0; i < size; i++){
+                for(var j =0; j < size; j++){
+                    grid[i][j] = getNewCell(0, 0, false, i, j);
+                }
+            }
+
+            for(var i = 0; i < food_amount; i++){
+                var x, y = -1;
+                while(x == -1 || y == -1 || (x == 6, y == 6)){
+                    x = getRandomNumber(0, size);
+                    y = getRandomNumber(0, size);
+                }
+                grid[x][y] = setRandomStat(grid[x][y]);
+            }
+            const newGrid = new Grid({hive: str, grid: grid});
+            newGrid.save()
+                .then(()=>{
+                    res.json('Grid generated!');
+                })
+                .catch(err => res.status(400).json('Error: ' + err));
+        })
         .catch(err => res.status(400).json('Error: ' + err));
+
+    
 });
 router.route('/delete-hive/:hive').post((req, res) => {
     Hive.findOneAndDelete({hive:req.params.hive})
@@ -42,6 +94,32 @@ router.route('/delete-hive/:hive').post((req, res) => {
 });
 function getRandomNumber(min, max){
     return Math.floor(Math.random() * (max - min) + min);
+}
+function setRandomStat(cell){
+    cell.nectar =getRandomNumber(100,300);
+    cell.flowerCount = getRandomNumber(50,100);
+    cell.flowerMax = getRandomNumber(300,500);
+    return cell;
+}
+function getNewCell(nectar, flowerCount, pollinated, x, y){
+    nectar = 0;
+    flowerCount = 0;
+    flowerMax = getRandomNumber(100, 300);
+    pollinated = false;
+    xLocationGrid = x;
+    yLocationGrid = y;
+    cell = new Cell(nectar, flowerCount, flowerMax, pollinated, xLocationGrid, yLocationGrid);
+    return cell;
+}
+class Cell{
+    constructor(nectar, flowerCount, flowerMax, pollinated, xLocationGrid, yLocationGrid){
+        this.nectar = nectar;
+        this.flowerCount = flowerCount;
+        this.flowerMax = flowerMax;
+        this.pollinated = pollinated;
+        this.xLocationGrid = xLocationGrid;
+        this.yLocationGrid = yLocationGrid;
+    }
 }
 class Bee{
     constructor(energy, cameFrom, intent, hasPollen, xLocation, yLocation, xLocationGrid, yLocationGrid, xLocationFood, yLocationFood){
