@@ -6,7 +6,20 @@ let Grid = require('../models/grid.model');
 let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-router.route('/process-grid/:hive').post((req,res) => {
+router.route('/test-route').post((req, res) => {
+    res.json('WORKS');
+});
+//TODO: Need to figure out multi parameters requests
+router.route(':hive/get-cell-info').get((req, res) => {
+    Hive.find({hive: req.params.hive})
+        .then((result) => {
+            var array = [];
+
+        })
+        .catch(err => res.status(400).json('Error: ' + err));
+});
+//TODO: Still needs work
+router.route('/:hive/process-grid').post((req,res) => {
     var hive = null;
     var grid = null;
     Hive.findOne({hive: req.params.hive})
@@ -27,7 +40,7 @@ router.route('/process-grid/:hive').post((req,res) => {
         }
     }
 });
-router.route('/add-bee/:hive').post((req, res) => {
+router.route('/:hive/add-bee').post((req, res) => {
     Hive.findOne({hive: req.params.hive})
         .then((result)=> {
             result.array.push(new Bee(10, "", "", false, 6, 6, -1, -1, -1, -1));
@@ -86,10 +99,14 @@ router.route('/add-new-hive').post((req, res) => {
 
     
 });
-router.route('/delete-hive/:hive').post((req, res) => {
+router.route('/:hive/delete-hive').post((req, res) => {
     Hive.findOneAndDelete({hive:req.params.hive})
         .then((result) => {
-            res.json('Result: ' + result)
+            Grid.findOneAndDelete({hive:req.params.hive})
+                .then((result) => {
+                    res.json("Deleted!");
+                })
+                .catch(err => res.status(400).json('Error: ' + err));
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
