@@ -12,15 +12,25 @@ export default class Load extends Component {
         // console.log(event.target.value);
     }
     onClickHandler = (event) =>{
-        
+        console.log("SENDING: " + this.state.id);
+        axios.post('http://localhost:5000/hive/load', {
+            hive: this.state.id
+          })
+          .then((response) => {
+            console.log(response);
+          }, (error) => {
+            console.log(error);
+          });
     }
     render() {
         return (
-            <form>
-            <span>Insert Hive ID: </span>
-            <input onChange= {this.onChangeHandler} maxlength = '4' type = 'text'/>
-            <button onClick = {this.onClickHandler}>Load</button>
-            </form>
+            <div>
+                <form>
+                <span>Insert Hive ID: </span>
+                    <input onChange= {this.onChangeHandler} maxLength = '4' type = 'text'/>
+                </form>
+                <button onClick = {this.onClickHandler}>Load</button>
+            </div>
         )
     }
 }

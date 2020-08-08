@@ -9,6 +9,10 @@ let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 router.route('/test-route').post((req, res) => {
     res.json('WORKS');
 });
+router.route('/load').post((req, res) => {
+    console.log("PARAMS: " + req.body.hive);
+    res.json('Sent');
+});
 //TODO: Need to figure out multi parameters requests
 router.route(':hive/get-cell-info').get((req, res) => {
     Hive.find({hive: req.params.hive})

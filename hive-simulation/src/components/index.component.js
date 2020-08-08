@@ -7,7 +7,7 @@ export default class Index extends Component {
   clickHandler = (e) =>{
     // e.preventDefault();
     console.log("BUTTON CLICKED");
-    axios.post('http://localhost:5000/hive/test-route');
+    axios.post('http://localhost:5000/hive/add-new-hive');
 
   }
   render() {
