@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { BrowserRouter as Router, Route, Redirect, useHistory , withRouter} from "react-router-dom";
+import {withRouter} from "react-router-dom";
 
 class Load extends Component {
     constructor(props){
