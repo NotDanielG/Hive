@@ -11,7 +11,12 @@ router.route('/test-route').post((req, res) => {
 });
 router.route('/load').post((req, res) => {
     console.log("PARAMS: " + req.body.hive);
-    res.json('Sent');
+    Hive.find({hive: req.body.hive})
+        .then((result) => {
+            res.json( result.length);
+        })
+        .catch(err => res.status(400).json('Error Not Found: ' + err));
+    
 });
 //TODO: Need to figure out multi parameters requests
 router.route(':hive/get-cell-info').get((req, res) => {

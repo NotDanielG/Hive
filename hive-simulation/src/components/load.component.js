@@ -2,10 +2,13 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-export default class Load extends Component {
+import { BrowserRouter as Router, Route, Redirect, useHistory , withRouter} from "react-router-dom";
+
+class Load extends Component {
     constructor(props){
         super(props);
-        this.state = {id: ''};
+        this.state = {id: '',
+                    redirect:false};
     }
     onChangeHandler = (event) =>{
         this.setState({id: event.target.value});
@@ -15,12 +18,16 @@ export default class Load extends Component {
         console.log("SENDING: " + this.state.id);
         axios.post('http://localhost:5000/hive/load', {
             hive: this.state.id
-          })
-          .then((response) => {
-            console.log(response);
-          }, (error) => {
-            console.log(error);
-          });
+        })
+        .then((response) => {
+            // console.log("Load component: " +JSON.stringify(response));
+            if(response.data != 0){
+                var url = 'http://localhost:5000/hive/' + this.state.id;
+                this.props.history.push("/hive/"+this.state.id);
+                // console.log("DWADWA");
+                // this.state.redirect = true;
+            }
+        }).catch(err => console.log('Error: ' + err));
     }
     render() {
         return (
@@ -34,4 +41,4 @@ export default class Load extends Component {
         )
     }
 }
-
+export default withRouter(Load);
