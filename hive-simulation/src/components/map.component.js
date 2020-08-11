@@ -7,6 +7,9 @@ export default class Map extends Component {
         super(props);
         this.state = {hive: ''};
     }
+    onComponentMount(){
+        
+    }
     render() {
         return (
             <div>
