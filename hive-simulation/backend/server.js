@@ -22,9 +22,7 @@ const beeRouter = require('./routes/bee');
 const hiveRouter = require('./routes/hive');
 const cellRouter = require('./routes/cell');
 
-// app.use('/bee', beeRouter);
 app.use('/hive', hiveRouter);
-// app.use('/cell', cellRouter);
 
 // app.get('/', function(req, res){
   
