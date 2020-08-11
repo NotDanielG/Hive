@@ -6,9 +6,6 @@ let Grid = require('../models/grid.model');
 let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-router.route('/test-route').post((req, res) => {
-    res.json('WORKS');
-});
 router.route('/load').post((req, res) => {
     console.log("PARAMS: " + req.body.hive);
     Hive.find({hive: req.body.hive})
@@ -18,7 +15,6 @@ router.route('/load').post((req, res) => {
         .catch(err => res.status(400).json('Error Not Found: ' + err));
     
 });
-//TODO: Need to figure out multi parameters requests
 router.route(':hive/get-cell-info').get((req, res) => {
     Hive.find({hive: req.params.hive})
         .then((result) => {
