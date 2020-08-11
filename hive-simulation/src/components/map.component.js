@@ -9,6 +9,7 @@ export default class Map extends Component {
     }
     onComponentMount(){
         
+        
     }
     render() {
         return (
