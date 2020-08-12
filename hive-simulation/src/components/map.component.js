@@ -8,8 +8,7 @@ export default class Map extends Component {
         this.state = {hive: ''};
     }
     onComponentMount(){
-        
-        
+        this.state.hive = this.props.match.params.hive;
     }
     render() {
         return (
