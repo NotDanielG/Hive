@@ -18,9 +18,7 @@ connection.once('open', () => {
   console.log("MongoDB database connection established successfully");
 })
 
-const beeRouter = require('./routes/bee');
 const hiveRouter = require('./routes/hive');
-const cellRouter = require('./routes/cell');
 
 app.use('/hive', hiveRouter);
 

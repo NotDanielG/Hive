@@ -13,7 +13,7 @@ export default class Map extends Component {
     render() {
         return (
             <div>
-                Hive Grid Map for {this.state.hive}
+                <span className = "">Hive Grid Map for {this.state.hive}</span>
             </div>
         )
     }

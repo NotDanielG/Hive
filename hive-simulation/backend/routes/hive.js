@@ -5,6 +5,9 @@ let Grid = require('../models/grid.model');
 
 let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+let GRID_SIZE = 7;
+let GRID_CENTER = Math.floor(GRID_SIZE/2);
+
 
 router.route('/load').post((req, res) => {
     console.log("PARAMS: " + req.body.hive);
@@ -48,7 +51,7 @@ router.route('/:hive/process-grid').post((req,res) => {
 router.route('/:hive/add-bee').post((req, res) => {
     Hive.findOne({hive: req.params.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", "", false, 6, 6, -1, -1, -1, -1));
+            result.array.push(new Bee(10, "", "", false, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -66,15 +69,14 @@ router.route('/add-new-hive').post((req, res) => {
     const x = 6;
     const array = [];
     const y = 6;
-    var bee = new Bee(10, "", "", false, 6, 6, -1, -1, -1, -1);
+    var bee = new Bee(10, "", "", false, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1);
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
 
     newHive.save()
         .then(() => {
-            
-            var size = 13;
+            var size = GRID_SIZE;
             var food_amount = 3;
             const grid = [];
 
@@ -82,12 +84,11 @@ router.route('/add-new-hive').post((req, res) => {
                 grid[i] = [];
                 for(var j =0; j < size; j++){
                     grid[i][j] = getNewCell(0, 0, false, i, j);
-                    // grid[i][j] = 0;
                 }
             }
             for(var i = 0; i < food_amount; i++){
                 var x, y = -1;
-                while(x == -1 || y == -1 || (x == 6, y == 6)){
+                while(x == -1 || y == -1 || (x == GRID_CENTER, y == GRID_CENTER)){
                     x = getRandomNumber(0, size);
                     y = getRandomNumber(0, size);
                 }
