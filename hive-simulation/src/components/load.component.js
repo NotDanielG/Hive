@@ -12,20 +12,15 @@ class Load extends Component {
     }
     onChangeHandler = (event) =>{
         this.setState({id: event.target.value});
-        // console.log(event.target.value);
     }
     onClickHandler = (event) =>{
-        console.log("SENDING: " + this.state.id);
         axios.post('http://localhost:5000/hive/load', {
             hive: this.state.id
         })
         .then((response) => {
-            // console.log("Load component: " +JSON.stringify(response));
-            if(response.data != 0){
-                var url = 'http://localhost:5000/hive/' + this.state.id;
+            if(response.data !== 0){
+                // var url = 'http://localhost:5000/hive/' + this.state.id;
                 this.props.history.push("/hive/"+this.state.id);
-                // console.log("DWADWA");
-                // this.state.redirect = true;
             }
         }).catch(err => console.log('Error: ' + err));
     }

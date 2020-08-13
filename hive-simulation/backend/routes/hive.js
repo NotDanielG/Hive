@@ -97,7 +97,7 @@ router.route('/add-new-hive').post((req, res) => {
             const newGrid = new Grid({hive: str, grid: grid});
             newGrid.save()
                 .then(()=>{
-                    res.json('Hive and Grid generated!');
+                    res.json(str);
                 })
                 .catch(err => res.status(400).json('Error: ' + err));
         })

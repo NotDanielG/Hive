@@ -2,13 +2,16 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import Load from './load.component.js';
+import {withRouter} from "react-router-dom";
 
-export default class Index extends Component {
+class Index extends Component {
   clickHandler = (e) =>{
-    // e.preventDefault();
-    console.log("BUTTON CLICKED");
-    axios.post('http://localhost:5000/hive/add-new-hive');
-
+    axios.post('http://localhost:5000/hive/add-new-hive')
+    .then((response) => {
+      var hive = response.data;
+      this.props.history.push("/hive/"+ hive);
+    })
+    .catch(err => console.log('Error: ' + err));
   }
   render() {
     return (
@@ -19,3 +22,4 @@ export default class Index extends Component {
     )
   }
 }
+export default withRouter(Index);

@@ -7,13 +7,13 @@ export default class Map extends Component {
         super(props);
         this.state = {hive: ''};
     }
-    onComponentMount(){
-        this.state.hive = this.props.match.params.hive;
+    componentDidMount(){
+        this.setState({hive: this.props.match.params.hive});
     }
     render() {
         return (
             <div>
-                <span className = "">Hive Grid Map for {this.state.hive}</span>
+                Hive ID: {this.state.hive}
             </div>
         )
     }
