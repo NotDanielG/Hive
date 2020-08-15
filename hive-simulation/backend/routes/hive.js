@@ -8,7 +8,20 @@ let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
 
-
+router.route(':hive/get-current-hive').get((req,res) => {
+    Hive.find({hive: req.params.hive})
+        .then((result) => {
+            res.json(result);
+        })
+        .catch(err => res.json('Could not be found'));
+});
+router.route(':hive/get-current-grid').get((req,res) => {
+    Hive.find({hive: req.params.hive})
+        .then((result) => {
+            res.json(result);
+        })
+        .catch(err => res.json('Could not be found'));
+});
 router.route('/load').post((req, res) => {
     console.log("PARAMS: " + req.body.hive);
     Hive.find({hive: req.body.hive})
@@ -16,13 +29,11 @@ router.route('/load').post((req, res) => {
             res.json( result.length);
         })
         .catch(err => res.status(400).json('Error Not Found: ' + err));
-    
 });
 router.route(':hive/get-cell-info').get((req, res) => {
     Hive.find({hive: req.params.hive})
         .then((result) => {
             var array = [];
-
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
@@ -49,9 +60,12 @@ router.route('/:hive/process-grid').post((req,res) => {
     }
 });
 router.route('/:hive/add-bee').post((req, res) => {
+    //W 190 H 100
+    const xCoord = getRandomNumber(70,130);
+    const yCoord = getRandomNumber(30, 70);
     Hive.findOne({hive: req.params.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", "", false, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
+            result.array.push(new Bee(10, "", "Forage", false, xCoord, yCoord, GRID_CENTER, GRID_CENTER, -1, -1));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -66,9 +80,9 @@ router.route('/add-new-hive').post((req, res) => {
         str+=characters.charAt(Math.floor(Math.random()*characters.length));
     }
     const honey = 100;
-    const x = 6;
+    const x = GRID_CENTER;
     const array = [];
-    const y = 6;
+    const y = GRID_CENTER;
     var bee = new Bee(10, "", "", false, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1);
     array.push(bee);
     
