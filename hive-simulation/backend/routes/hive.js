@@ -8,15 +8,16 @@ let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
 
-router.route(':hive/get-current-hive').get((req,res) => {
-    Hive.find({hive: req.params.hive})
+router.route('/get-current-hive').get((req,res) => {
+    console.log("Hive ID Recieved: +" + req.params.hive);
+    Hive.find({hive: req.query.hive})
         .then((result) => {
             res.json(result);
         })
         .catch(err => res.json('Could not be found'));
 });
-router.route(':hive/get-current-grid').get((req,res) => {
-    Hive.find({hive: req.params.hive})
+router.route('/get-current-grid').get((req,res) => {
+    Grid.find({hive: req.query.hive})
         .then((result) => {
             res.json(result);
         })
@@ -30,18 +31,18 @@ router.route('/load').post((req, res) => {
         })
         .catch(err => res.status(400).json('Error Not Found: ' + err));
 });
-router.route(':hive/get-cell-info').get((req, res) => {
-    Hive.find({hive: req.params.hive})
+router.route('/get-cell-info').get((req, res) => {
+    Hive.find({hive: req.query.hive})
         .then((result) => {
             var array = [];
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
 //TODO: Still needs work
-router.route('/:hive/process-grid').post((req,res) => {
+router.route('/process-grid').post((req,res) => {
     var hive = null;
     var grid = null;
-    Hive.findOne({hive: req.params.hive})
+    Hive.findOne({hive: req.query.hive})
         .then((result) => {
             // res.json(result.array);
             hive = result;
@@ -59,13 +60,13 @@ router.route('/:hive/process-grid').post((req,res) => {
         }
     }
 });
-router.route('/:hive/add-bee').post((req, res) => {
+router.route('/add-bee').post((req, res) => {
     //W 190 H 100
-    const xCoord = getRandomNumber(70,130);
-    const yCoord = getRandomNumber(30, 70);
-    Hive.findOne({hive: req.params.hive})
+    const xCoord = getRandomNumber(80,110);
+    const yCoord = getRandomNumber(50, 70);
+    Hive.findOne({hive: req.query.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", "Forage", false, xCoord, yCoord, GRID_CENTER, GRID_CENTER, -1, -1));
+            result.array.push(new Bee(10, "", "Forage", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -83,7 +84,9 @@ router.route('/add-new-hive').post((req, res) => {
     const x = GRID_CENTER;
     const array = [];
     const y = GRID_CENTER;
-    var bee = new Bee(10, "", "", false, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1);
+    const xCoord = getRandomNumber(80,110);
+    const yCoord = getRandomNumber(50, 70);
+    var bee = new Bee(10, "", "", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1);
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
@@ -119,8 +122,8 @@ router.route('/add-new-hive').post((req, res) => {
 
     
 });
-router.route('/:hive/delete-hive').post((req, res) => {
-    Hive.findOneAndDelete({hive:req.params.hive})
+router.route('/delete-hive').post((req, res) => {
+    Hive.findOneAndDelete({hive:req.query.hive})
         .then((result) => {
             Grid.findOneAndDelete({hive:req.params.hive})
                 .then((result) => {
