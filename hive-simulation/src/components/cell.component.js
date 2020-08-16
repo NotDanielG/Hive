@@ -15,14 +15,15 @@ export default class Cell extends Component {
     render() {
         const row = this.props.row;
         const col = this.props.column;
-
+        const percentage = this.props.percentage;
+        var value = 255-255*percentage;
         const styles = {
             container: {
                 gridColumnStart: col,
                 gridColumnEnd: col+1,
                 gridRowStart: row,
                 gridRowEnd: row+1,
-                backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                backgroundColor: 'rgba(' +value+ ', 255, '+value +', 1)'
             }
         };
         this.refCallback = element => {
@@ -35,7 +36,7 @@ export default class Cell extends Component {
         };
         return (
             <div ref = {this.refCallback} style={styles.container} className = "cell">
-                {row} {col}
+                {/* {row} {col} */}
             </div>
         )
     }

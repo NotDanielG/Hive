@@ -83,7 +83,7 @@ router.route('/add-new-hive').post((req, res) => {
     const x = GRID_CENTER;
     const array = [];
     const y = GRID_CENTER;
-    const xCoord = getRandomNumber(80,110);
+    const xCoord = getRandomNumber(80, 110);
     const yCoord = getRandomNumber(50, 70);
     var bee = new Bee(10, "", "", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1);
     array.push(bee);

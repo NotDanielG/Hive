@@ -12,33 +12,33 @@ export default class Map extends Component {
         this.state = {hive: '',
         grid: [],
         bees: []};
-        // this.grid = [];
-        // this.bees = [];
     }
     componentDidMount(){
         this.setState({hive: this.props.match.params.hive});
-        const size = 7;
-        var temp = [];
-        for(var i = 0; i < size; i++){
-            temp[i]=[];
-            for(var j = 0; j < size; j++){
-                temp[i][j] = <Cell row={i} column ={j}/>
-            }
-        }
-        this.setState({grid: temp});
-        this.bees = [];
-        this.displayBees();
-        // this.bees.push(<Bee x={500} y={500}/>); 
         
-
-        // axios.get('http://localhost:5000/hive/'+this.state.hive + '/get-current-grid')
-        // .then((response) => {
-            
-        // }).catch(err => console.log('Error: ' + err));;
+        this.displayGrid();
+        this.displayBees();
 
     }
+    async displayGrid(){
+        const size = 7;
+        var temp = [];
+        await axios.get('http://localhost:5000/hive/get-current-grid', {
+            params: {hive: this.props.match.params.hive}
+        })
+        .then((response) => {
+            for(var i = 0; i < response.data[0].grid.length; i++){
+                temp[i] = [];
+                for(var j = 0; j < response.data[0].grid.length; j++){
+                    temp[i][j] = <Cell row={i} column ={j} percentage={response.data[0].grid[i][j].flowerCount/500}/>
+                }
+            }
+            this.setState({grid: temp});    
+        }).catch(err => console.log('Error: ' + err));;
+        
+    }
     async displayBees(){
-        axios.get('http://localhost:5000/hive/get-current-hive',{
+        await axios.get('http://localhost:5000/hive/get-current-hive',{
             params: {hive: this.props.match.params.hive}
         })
         .then((response) => {   
@@ -51,9 +51,7 @@ export default class Map extends Component {
 
     }
 
-
-
-    //190W 132H
+    //191W 135H
     //Grid CSS is at 14%(Assuming 7 wide grid)
     render() {
         return (
