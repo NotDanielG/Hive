@@ -9,20 +9,26 @@ import Bee from './bee.component.js';
 export default class Map extends Component {
     constructor(props){
         super(props);
-        this.state = {hive: ''};
-        this.grid = [];
-        this.bees = [];
+        this.state = {hive: '',
+        grid: [],
+        bees: []};
+        // this.grid = [];
+        // this.bees = [];
     }
     componentDidMount(){
         this.setState({hive: this.props.match.params.hive});
         const size = 7;
+        var temp = [];
         for(var i = 0; i < size; i++){
-            this.grid[i]=[];
+            temp[i]=[];
             for(var j = 0; j < size; j++){
-                this.grid[i][j] = <Cell row={i} column ={j}/>
+                temp[i][j] = <Cell row={i} column ={j}/>
             }
         }
+        this.setState({grid: temp});
+        this.bees = [];
         this.displayBees();
+        // this.bees.push(<Bee x={500} y={500}/>); 
         
 
         // axios.get('http://localhost:5000/hive/'+this.state.hive + '/get-current-grid')
@@ -31,21 +37,20 @@ export default class Map extends Component {
         // }).catch(err => console.log('Error: ' + err));;
 
     }
-    displayBees(){
-        // 
-        axios.get('http://localhost:5000/hive/get-current-grid',{
+    async displayBees(){
+        axios.get('http://localhost:5000/hive/get-current-hive',{
             params: {hive: this.props.match.params.hive}
         })
         .then((response) => {   
-            this.bees = [];
-            console.log("DAWAWDAAWAWDA");
-            // console.log(response.data);
-            // for(var i = 0; i < response.data.array.length; i++){
-            //     this.bees.push(<Bee xGrid = {response.data.array[i].xLocationGrid} yGrid = {response.data.array[i].yLocationGrid} 
-            //                        x = {response.data.array[i].xLocation} y = {response.data.array[i].yLocation}/>);
-            // }
+            var temp = [];
+            for(var i = 0; i < response.data[0].array.length; i++){
+                temp.push(<Bee x={response.data[0].array[i].xLocation} y ={response.data[0].array[i].yLocation} />);
+            }
+            this.setState({bees: temp});
         }).catch(err => console.log('Error: ' + err));
+
     }
+
 
 
     //190W 132H
@@ -56,10 +61,12 @@ export default class Map extends Component {
                 <div className = "id-tag">Hive ID: {this.state.hive}</div>
                 <div className = "grid-container" >
                     <div className = "grid">
-                        {this.grid}
+                        {this.state.grid}
                     </div>
                     <Hive />
-                    {this.bees}
+                    <div className = "bee-container">
+                        {this.state.bees}
+                    </div>
                 </div>
                 <div className = "cell-info"></div>
             </div>

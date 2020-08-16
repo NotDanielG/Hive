@@ -9,7 +9,6 @@ let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
 
 router.route('/get-current-hive').get((req,res) => {
-    console.log("Hive ID Recieved: +" + req.params.hive);
     Hive.find({hive: req.query.hive})
         .then((result) => {
             res.json(result);
