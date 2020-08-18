@@ -38,34 +38,56 @@ router.route('/get-cell-info').get((req, res) => {
         .catch(err => res.status(400).json('Error: ' + err));
 });
 //TODO: Still needs work
-router.route('/process-grid').post((req,res) => {
+router.route('/process-grid').post(async (req,res) => {
+    var hivePromise = getHive(req);
+    var gridPromise = getGrid(req);
     var hive = null;
     var grid = null;
-    Hive.findOne({hive: req.query.hive})
-        .then((result) => {
-            // res.json(result.array);
-            hive = result;
-        })
-        .catch(err => res.status(400).json('Error: ' + err));
-
+    await hivePromise.then((result) => {
+        hive = result;
+    });
+    await gridPromise.then((result) => {
+        grid = result;
+    });
+    
     for(var i = 0; i < hive.array.length; i++){
-        switch(result.array[0].intent){
-            case('Forage'):
-                break;
-            case('Waiting'):
-                break;
-            case('Deposit'):
-                break;
-        }
+        // hive.array[i]
+        //action = none, don't do anything.
+        //action = pending, continue traveling to destination. 
+        //if dest reached, changed action to completed and go to intent. action changes in intent switch cases
+        // switch(hive.array[i].intent){
+        //     case('Searching'):
+        //         break;
+        //     case('Foraging'):
+        //         break;
+        //     case('Waiting'):
+        //         break;
+        //     case('Deposit'):
+        //         break;
+        // }   
+        hive.array[i].xLocation+=1;
     }
+    Hive.findOne({hive: req.body.params.hive})
+        .then((result) => {
+            result.array = hive.array;
+            result.save()
+                .then(() => res.json("Saved"))
+                .catch(err => res.status(400).json('Error '+ err));
+        })
+        .catch(err => res.json('Could not be found'));
 });
+
 router.route('/add-bee').post((req, res) => {
-    //W 190 H 100
     const xCoord = getRandomNumber(80,110);
     const yCoord = getRandomNumber(50, 70);
+    var decider = getRandomNumber(0, 10);
+    const randomizedIntent = "Waiting";
+    if(decider <= 3){
+        randomizedIntent = "Searching"
+    }
     Hive.findOne({hive: req.query.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", "Forage", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1));
+            result.array.push(new Bee(10, "", randomizedIntent, "None",false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -85,7 +107,7 @@ router.route('/add-new-hive').post((req, res) => {
     const y = GRID_CENTER;
     const xCoord = getRandomNumber(80, 110);
     const yCoord = getRandomNumber(50, 70);
-    var bee = new Bee(10, "", "", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1);
+    var bee = new Bee(10, "", "Searching", "None", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1);
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
@@ -132,6 +154,22 @@ router.route('/delete-hive').post((req, res) => {
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
+async function getHive(req){
+    var val = null
+    await Hive.findOne({hive: req.body.params.hive})
+        .then((result) => {
+            val = result;
+        })
+        .catch(err => res.status(400).json('Error: ' + err));
+    return val;
+}
+async function getGrid(req){
+    await Grid.findOne({hive: req.body.params.hive})
+        .then((res) => {
+            return res;
+        })
+        .catch(err => res.status(400).json('Error: ' + err));   
+}
 function getRandomNumber(min, max){
     return Math.floor(Math.random() * (max - min) + min);
 }
@@ -157,10 +195,11 @@ class Cell{
     }
 }
 class Bee{
-    constructor(energy, cameFrom, intent, hasPollen, xLocation, yLocation, xLocationGrid, yLocationGrid, xLocationFood, yLocationFood){
+    constructor(energy, cameFrom, intent, action,hasPollen, xLocation, yLocation, xLocationGrid, yLocationGrid, xLocationFood, yLocationFood, xDestination, yDestination){
         this.energy = energy;
         this.cameFrom = cameFrom;
         this.intent = intent;
+        this.action = action;
         this.hasPollen = hasPollen;
         this.xLocation = xLocation;
         this.yLocation = yLocation;
@@ -168,22 +207,11 @@ class Bee{
         this.yLocationGrid = yLocationGrid;
         this.xLocationFood = xLocationFood;
         this.yLocationFood = yLocationFood;
+        this.xDestination = xDestination;
+        this.yDestination = yDestination;
     }
     setIntent(intended){
         this.intent = intended;
-    }
-    stringify(){
-        return JSON.stringify({
-            energy: this.energy, 
-            cameFrom: this.cameFrom, 
-            intent: this.intent, 
-            hasPollen: this.hasPollen, 
-            xLocation: this.xLocation, 
-            yLocation: this.yLocation, 
-            xLocationGrid: this.xLocationGrid, 
-            yLocationGrid: this.yLocationGrid, 
-            xLocationFood: this. xLocationFood, 
-            yLocationFood: this.yLocationFood});
     }
 }
 module.exports = router;

@@ -12,13 +12,24 @@ export default class Map extends Component {
         this.state = {hive: '',
         grid: [],
         bees: []};
+        const interval = null;
     }
     componentDidMount(){
         this.setState({hive: this.props.match.params.hive});
-        
+        this.updateGrid();
+    }
+    componentWillUnmount(){
+        // clearInterval(interval);
+    }
+    updateGrid(){
         this.displayGrid();
         this.displayBees();
-
+        axios.post('http://localhost:5000/hive/process-grid', {
+            params: {hive: this.props.match.params.hive}
+        })
+        .then((response) => {
+            console.log("Response: " + response.data);  
+        }).catch(err => console.log('Error: ' + err));
     }
     async displayGrid(){
         const size = 7;
@@ -34,7 +45,7 @@ export default class Map extends Component {
                 }
             }
             this.setState({grid: temp});    
-        }).catch(err => console.log('Error: ' + err));;
+        }).catch(err => console.log('Error: ' + err));
         
     }
     async displayBees(){
