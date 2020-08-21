@@ -2,11 +2,28 @@ const router = require('express').Router();
 let Hive = require('../models/hive.model');
 let Grid = require('../models/grid.model');
 
-
 let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
+let capacity = 8;
+
+let NORTH = 0;
+let EAST = 1;
+let SOUTH = 2;
+let WEST = 3;
+
+let width = 191;
+let height = 135;
+
+//TODO: 
+//Traveling function for bees
+//Energy Implementation
+//Grid change based on flowerMax
+
+//Later TODO:
+//Pollination(can include a round based timer on the cell), based on a number, can increase flowerCount
+
 
 router.route('/get-current-hive').get((req,res) => {
     Hive.find({hive: req.query.hive})
@@ -51,21 +68,110 @@ router.route('/process-grid').post(async (req,res) => {
     });
     
     for(var i = 0; i < hive.array.length; i++){
-        // hive.array[i]
+        var bee = hive.array[i];
         //action = none, don't do anything.
         //action = pending, continue traveling to destination. 
-        //if dest reached, changed action to completed and go to intent. action changes in intent switch cases
-        // switch(hive.array[i].intent){
-        //     case('Searching'):
-        //         break;
-        //     case('Foraging'):
-        //         break;
-        //     case('Waiting'):
-        //         break;
-        //     case('Deposit'):
-        //         break;
-        // }   
-        hive.array[i].xLocation+=1;
+        //if dest reached, changed action to completed and go to intent. action can be changed in intent switch cases
+        var doIntent = false;
+        switch(bee.action){
+            case('Pending'):
+                //TODO: TRAVELING FUNCTION
+
+
+                if(bee.xLocation == bee.xDestination && bee.yLocation == bee.yLocation){
+                    bee.action = 'Completed';
+                    doIntent = true;
+                }
+                break;
+            case('Completed'):
+                doIntent = true;
+                break;
+            case('None'):
+                break;
+        }
+        if(doIntent){
+            switch(bee.intent){
+                case('Searching'):
+                    if(isValidCell(grid, bee)){
+                        bee.intent = 'Deposit';
+                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
+                        bee.nectar += capacity;
+
+                        bee.xLocationFood = bee.xLocationGrid;
+                        bee.yLocationFood = bee.yLocationGrid;
+
+                        var xCoord = getRandomNumber(80, 110);
+                        var yCoord = getRandomNumber(50, 70);
+                        bee.xDestination = GRID_CENTER * width + xCoord;
+                        bee.yDestination = GRID_CENTER * height + yCoord;
+                        bee.action = 'Pending';
+                    }
+                    else{
+                        var array = getValidDirections(bee);
+                        var rand = getRandomNumber(0,array.length);
+                        var xDirection = 0;
+                        var yDirection = 0;
+                        
+                        if(rand == NORTH){
+                            yDirection = -1;
+                        }
+                        if(rand == EAST){
+                            xDirection = 1;
+                        }
+                        if(rand == SOUTH){
+                            yDirection = -1;
+                        }
+                        if(rand == WEST){
+                            xDirection = -1;
+                        }
+                        bee.xLocationGrid += xDirection;
+                        bee.yLocationGrid += yDirection;
+
+                        var xCoord = getRandomNumber(80, 110);
+                        var yCoord = getRandomNumber(50, 70);
+
+                        bee.xDestination = bee.xLocationGrid * width + xCoord;
+                        bee.yDestination = bee.yLocationGrid * height + yCoord;
+                        
+                        bee.action = 'Pending';
+                    }
+                    
+                    break;
+                case('Foraging'): //Once action is completed, foraging is intent. 
+                    if(isValidCell(grid, bee)){
+                        bee.intent = 'Deposit';
+                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
+                        bee.nectar += capacity;
+
+                        bee.xLocationFood = bee.xLocationGrid;
+                        bee.yLocationFood = bee.yLocationGrid;
+
+                        var xCoord = getRandomNumber(80, 110);
+                        var yCoord = getRandomNumber(50, 70);
+                        bee.xDestination = GRID_CENTER * width + xCoord;
+                        bee.yDestination = GRID_CENTER * height + yCoord;
+                        bee.action = 'Pending';
+                    }
+                    else{
+                        bee.action = 'Searching';
+                    }
+                    break;
+                case('Waiting'):
+                    break;
+                case('Deposit'):
+                    //--------------------------------Make sure to include energy usage
+                    bee.intent = 'Foraging';
+                    bee.nectar -= bee.nectar;
+
+                    var xCoord = getRandomNumber(80, 110);
+                    var yCoord = getRandomNumber(50, 70);
+
+                    bee.xDestination = bee.xLocationFood * width + xCoord;
+                    bee.yDestination = bee.yLocationFood * height + yCoord;
+                    bee.action = 'Pending';
+                    break;
+            }   
+        }
     }
     Hive.findOne({hive: req.body.params.hive})
         .then((result) => {
@@ -87,7 +193,7 @@ router.route('/add-bee').post((req, res) => {
     }
     Hive.findOne({hive: req.query.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", randomizedIntent, "None",false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
+            result.array.push(new Bee(10, "", randomizedIntent, "None",false, GRID_CENTER * width + xCoord, GRID_CENTER * height + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -154,6 +260,72 @@ router.route('/delete-hive').post((req, res) => {
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
+function isValidCell(grid, bee){
+    var map = grid.grid;
+    if(map[bee.xLocationGrid][bee.yLocationGrid.nectar] >= capacity){
+        return true;
+    }
+    return false;
+}
+function getValidDirections(bee){
+    var directions = [];
+    directions.push(0, 1, 2, 3);
+    switch(bee.cameFrom){
+        case('North'):
+            directions = removeFromArray(directions, 0);
+            break;
+        case('East'):
+            directions = removeFromArray(directions, 1);
+            break;
+        case('South'):
+            directions = removeFromArray(directions, 2);
+            break;
+        case('West'):
+            directions = removeFromArray(directions, 3);
+            break;
+    }
+    switch(bee.xLocationGrid){
+        case(0):
+            directions = removeFromArray(directions, WEST);
+            break;
+        case(GRID_SIZE):
+            directions = removeFromArray(directions, EAST);
+            break;
+    }
+    switch(bee.yLocationGrid){
+        case(0):
+            directions = removeFromArray(directions, NORTH);
+            break;
+        case(GRID_SIZE):
+            directions = removeFromArray(directions, SOUTH);
+            break;
+    }
+    if(bee.xLocationGrid == 2 && bee.yLocationGrid == 3){ //NORTH OF HIVE
+        directions = removeFromArray(directions, SOUTH);
+    }
+    if(bee.xLocationGrid == 4 && bee.yLocationGrid == 3){ //SOUTH OF HIVE
+        directions = removeFromArray(directions, NORTH);
+    }
+    if(bee.xLocationGrid == 3 && bee.yLocationGrid == 2){ //WEST OF HIVE
+        directions = removeFromArray(directions, EAST);
+    }
+    if(bee.xLocationGrid == 3 && bee.yLocationGrid == 4){ //EAST OF HIVE
+        directions = removeFromArray(directions, WEST);
+    }
+    return directions;
+    
+
+    
+}
+function removeFromArray(array, value){
+    for(var i = 0; i < array.length; i++){
+        if(array[i] == value){
+            array.splice(i, 1);
+            break;
+        }
+    }
+    return array;
+}
 async function getHive(req){
     var val = null
     await Hive.findOne({hive: req.body.params.hive})
