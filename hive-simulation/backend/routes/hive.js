@@ -17,9 +17,11 @@ let width = 191;
 let height = 135;
 
 //TODO: 
-//Traveling function for bees
-//Energy Implementation
-//Grid change based on flowerMax
+//Traveling function for bees - Completed Untested
+//Grid changes based on flowerCount - Completed Untested
+//Hive makes new bees - Completed Untested
+//Energy Implementation + go back on low energy
+
 
 //Later TODO:
 //Pollination(can include a round based timer on the cell), based on a number, can increase flowerCount
@@ -54,7 +56,7 @@ router.route('/get-cell-info').get((req, res) => {
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
-//TODO: Still needs work
+
 router.route('/process-grid').post(async (req,res) => {
     var hivePromise = getHive(req);
     var gridPromise = getGrid(req);
@@ -67,6 +69,7 @@ router.route('/process-grid').post(async (req,res) => {
         grid = result;
     });
     
+    //Bee Update
     for(var i = 0; i < hive.array.length; i++){
         var bee = hive.array[i];
         //action = none, don't do anything.
@@ -75,8 +78,16 @@ router.route('/process-grid').post(async (req,res) => {
         var doIntent = false;
         switch(bee.action){
             case('Pending'):
-                //TODO: TRAVELING FUNCTION
+                var speed = 10;
+                var xDifference = bee.xDestination - bee.xLocation;
+                var yDifference = bee.yDestination - bee.yLocation;
+                var angle = Math.atan2(yDifference, xDifference);
 
+                var velocityX = Math.cos(angle)*speed;
+                var velocityY = Math.sin(angle)*speed;
+
+                bee.xLocation += velocityX;
+                bee.yLocation += velocityY;
 
                 if(bee.xLocation == bee.xDestination && bee.yLocation == bee.yLocation){
                     bee.action = 'Completed';
@@ -141,6 +152,7 @@ router.route('/process-grid').post(async (req,res) => {
                     if(isValidCell(grid, bee)){
                         bee.intent = 'Deposit';
                         grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
+                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinated = true;
                         bee.nectar += capacity;
 
                         bee.xLocationFood = bee.xLocationGrid;
@@ -161,10 +173,11 @@ router.route('/process-grid').post(async (req,res) => {
                 case('Deposit'):
                     //--------------------------------Make sure to include energy usage
                     bee.intent = 'Foraging';
+                    hive.honey += bee.nectar;
                     bee.nectar -= bee.nectar;
 
-                    var xCoord = getRandomNumber(80, 110);
-                    var yCoord = getRandomNumber(50, 70);
+                    var xCoord = getRandomNumber(30, 160);
+                    var yCoord = getRandomNumber(30, 110);
 
                     bee.xDestination = bee.xLocationFood * width + xCoord;
                     bee.yDestination = bee.yLocationFood * height + yCoord;
@@ -173,14 +186,60 @@ router.route('/process-grid').post(async (req,res) => {
             }   
         }
     }
+
+    //Grid Update
+    if(grid.tick >= 50){
+        var rMax = 10;
+        for(var i = 0; i < GRID_SIZE; i++) {
+            for(var j = 0; j < GRID_SIZE; j++){
+                var regenerate = Math.floor((grid.grid[i][j].flowerCount)/3);
+                grid.grid[i][j].nectar += regenerate;
+                
+                var K = grid.grid[i][j].flowerMax;
+                var N = grid.grid[i][j].flowerCount;
+                var logGrowthRate = calculateLogGrowth(rMax, K, N);
+                
+                if(grid.grid[i][j].pollinated){
+                    logGrowthRate = Math.floor(logGrowthRate*1.2);
+                }
+
+                if(N > 0 && logGrowthRate <= 0){
+                    logGrowthRate = 1;
+                }
+                grid.grid[i][j].flowerCount += logGrowthRate;
+
+            }
+        }
+        grid.tick = 0;
+    }
+
+    //Make new bees
+    if(hive.nectar >= hive.array.length*8){
+        var xCoord = getRandomNumber(80, 110);
+        var yCoord = getRandomNumber(50, 70);
+        hive.array.push(new Bee(10, "", "Searching", "None", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
+    }
+
     Hive.findOne({hive: req.body.params.hive})
         .then((result) => {
             result.array = hive.array;
+            result.honey = result.honey;
             result.save()
-                .then(() => res.json("Saved"))
+                .then(() => console.log("Saved"))
                 .catch(err => res.status(400).json('Error '+ err));
         })
         .catch(err => res.json('Could not be found'));
+    
+    Grid.findOne({hive: req.body.params.hive})
+        .then((result) => {
+            result.grid = grid.grid;
+            result.tick += 1;
+            result.save()
+                .then(() => console.log("Saved"))
+                .catch(err => res.status(400).json('Error '+ err));
+        })
+        .catch(err => res.json('Could not be found'));
+    
 });
 
 router.route('/add-bee').post((req, res) => {
@@ -238,7 +297,8 @@ router.route('/add-new-hive').post((req, res) => {
                 }
                 grid[x][y] = setRandomStat(grid[x][y]);
             }
-            const newGrid = new Grid({hive: str, grid: grid});
+            const tick = 0;
+            const newGrid = new Grid({hive: str, grid: grid, tick: tick});
             newGrid.save()
                 .then(()=>{
                     res.json(str);
@@ -260,6 +320,10 @@ router.route('/delete-hive').post((req, res) => {
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
+
+function calculateLogGrowth(rMax, K, N){
+    return Math.round(rMax*N*((K-N)/K));
+}
 function isValidCell(grid, bee){
     var map = grid.grid;
     if(map[bee.xLocationGrid][bee.yLocationGrid.nectar] >= capacity){
@@ -364,6 +428,7 @@ class Cell{
         this.pollinated = pollinated;
         this.xLocationGrid = xLocationGrid;
         this.yLocationGrid = yLocationGrid;
+        this.pollinationCounter = 0;
     }
 }
 class Bee{
