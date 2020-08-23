@@ -12,30 +12,35 @@ export default class Map extends Component {
         this.state = {hive: '',
         grid: [],
         bees: []};
-        const interval = null;
+        this.interval = null;
+        this.hiveID = '';
+        this.updateGrid.bind(this)
     }
-    componentDidMount(){
-        this.setState({hive: this.props.match.params.hive});
+    async componentDidMount(){
+        var temp = this.props.match.params.hive;
+        await this.setState({hive: temp});
+        this.hiveID = this.state.hive;
         this.updateGrid();
     }
     componentWillUnmount(){
-        // clearInterval(interval);
+        if(this.interval != null){
+            clearInterval(this.interval);
+        }
     }
-    updateGrid(){
-        this.displayGrid();
-        this.displayBees();
-        axios.post('http://localhost:5000/hive/process-grid', {
-            params: {hive: this.props.match.params.hive}
-        })
-        .then((response) => {
-            console.log("Response: " + response.data);  
-        }).catch(err => console.log('Error: ' + err));
+    intervalButton = () => {
+        if(this.interval == null){
+            this.interval = setInterval(this.updateGrid.bind(this), 1000);
+        }
+        else{
+            this.interval = null;
+        }
+        console.log(this.interval);
     }
     async displayGrid(){
-        const size = 7;
+        // const size = 7;
         var temp = [];
-        await axios.get('http://localhost:5000/hive/get-current-grid', {
-            params: {hive: this.props.match.params.hive}
+        axios.get('http://localhost:5000/hive/get-current-grid', {
+            params: {hive: this.state.hive}
         })
         .then((response) => {
             for(var i = 0; i < response.data[0].grid.length; i++){
@@ -43,23 +48,40 @@ export default class Map extends Component {
                 for(var j = 0; j < response.data[0].grid.length; j++){
                     temp[i][j] = <Cell row={i} column ={j} percentage={response.data[0].grid[i][j].flowerCount/500}/>
                 }
+                
             }
+            console.log("DISPLAY GRIDDDDDDDD");
             this.setState({grid: temp});    
         }).catch(err => console.log('Error: ' + err));
         
     }
     async displayBees(){
-        await axios.get('http://localhost:5000/hive/get-current-hive',{
-            params: {hive: this.props.match.params.hive}
+        axios.get('http://localhost:5000/hive/get-current-hive',{
+            params: {hive: this.state.hive}
         })
         .then((response) => {   
             var temp = [];
             for(var i = 0; i < response.data[0].array.length; i++){
                 temp.push(<Bee x={response.data[0].array[i].xLocation} y ={response.data[0].array[i].yLocation} />);
             }
+            console.log("DISPLAY BEEEEEEES");
             this.setState({bees: temp});
         }).catch(err => console.log('Error: ' + err));
-
+    }
+    updateGrid = () =>{
+        console.log("Processing Grid");
+        axios.post('http://localhost:5000/hive/process-grid', {
+            params: {hive: this.state.hive}
+        })
+        .then((response) => {
+            console.log("Response: " + response.data);  
+        }).catch(err => console.log('Error: ' + err));
+        console.log("Displaying Grid");
+        this.displayGrid();
+        console.log("Displaying Bees");
+        this.displayBees();
+        this.render();
+        console.log("Running...");
     }
 
     //191W 135H
@@ -67,7 +89,9 @@ export default class Map extends Component {
     render() {
         return (
             <div className = "map-container">
-                <div className = "id-tag">Hive ID: {this.state.hive}</div>
+                <div className = "id-tag">Hive ID: {this.state.hive} <br/>
+                    <button onClick = {this.updateGrid}>Start Process</button>
+                </div>
                 <div className = "grid-container" >
                     <div className = "grid">
                         {this.state.grid}

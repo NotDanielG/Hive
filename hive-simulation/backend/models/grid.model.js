@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 
 const gridSchema = new Schema({
   hive: { type: String, required: true ,unique:true},
-  grid: { type: Array, required: true}
+  grid: { type: Array, required: true},
+  tick: { type: Number, required: true}
 }, {
   timestamps: true,
 });
