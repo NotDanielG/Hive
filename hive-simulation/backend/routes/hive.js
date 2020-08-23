@@ -292,42 +292,7 @@ router.route('/add-new-hive').post((req, res) => {
     const honey = 100;
     const x = GRID_CENTER;
     const array = [];
-    const y = GRID_CENTER;
-    // const xCoord = getRandomNumber(80, 110);
-    // const yCoord = getRandomNumber(50, 70);
-    // var rand = getRandomNumber(0,3);
-    // var xDir = 0;
-    // var yDir = 0;
-    // var cameFrom = "";
-    // switch(rand){
-    //     case(NORTH):
-    //         // console.log("NORTH");
-    //         cameFrom = "SOUTH";
-    //         yDir = -1;
-    //         break;
-    //     case(EAST):
-    //         xDir = 1;
-    //         // console.log("EAST");
-    //         cameFrom = "WEST";
-    //         break;
-    //     case(SOUTH):
-    //         yDir = 1;
-    //         // console.log("SOUTH");
-    //         cameFrom = "NORTH";
-    //         break;
-    //     case(WEST):
-    //         xDir = -1;
-    //         // console.log("WEST");
-    //         cameFrom = "EAST";
-    //         break;
-    // }
-    // var xFirst = getRandomNumber(30, 160);
-    // var yFirst = getRandomNumber(30, 110);
-    // var xDest = (GRID_CENTER + xDir)*191 + xFirst;
-    // var yDest = (GRID_CENTER + yDir)*135 + yFirst;
-
-    // var bee = new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest);
-    var bee = generateBee();
+    const y = GRID_CENTER; var bee = generateBee();
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
