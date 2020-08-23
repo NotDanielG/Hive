@@ -32,9 +32,9 @@ export default class Map extends Component {
             this.interval = setInterval(this.updateGrid.bind(this), 1000);
         }
         else{
+            this.interval = clearInterval(this.interval);
             this.interval = null;
         }
-        console.log(this.interval);
     }
     async displayGrid(){
         // const size = 7;
@@ -50,7 +50,6 @@ export default class Map extends Component {
                 }
                 
             }
-            console.log("DISPLAY GRIDDDDDDDD");
             this.setState({grid: temp});    
         }).catch(err => console.log('Error: ' + err));
         
@@ -64,24 +63,19 @@ export default class Map extends Component {
             for(var i = 0; i < response.data[0].array.length; i++){
                 temp.push(<Bee x={response.data[0].array[i].xLocation} y ={response.data[0].array[i].yLocation} />);
             }
-            console.log("DISPLAY BEEEEEEES");
             this.setState({bees: temp});
         }).catch(err => console.log('Error: ' + err));
     }
     updateGrid = () =>{
-        console.log("Processing Grid");
         axios.post('http://localhost:5000/hive/process-grid', {
             params: {hive: this.state.hive}
         })
         .then((response) => {
-            console.log("Response: " + response.data);  
+            // console.log("Response: " + response.data);  
         }).catch(err => console.log('Error: ' + err));
-        console.log("Displaying Grid");
         this.displayGrid();
-        console.log("Displaying Bees");
         this.displayBees();
         this.render();
-        console.log("Running...");
     }
 
     //191W 135H

@@ -202,7 +202,7 @@ router.route('/process-grid').post(async (req,res) => {
 
     //Grid Update
     if(grid.tick >= 50){
-        var rMax = 10;
+        var rMax = 0.01;
         for(var i = 0; i < GRID_SIZE; i++) {
             for(var j = 0; j < GRID_SIZE; j++){
                 var regenerate = Math.floor((grid.grid[i][j].flowerCount)/3);
