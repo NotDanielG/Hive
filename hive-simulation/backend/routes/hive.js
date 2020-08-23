@@ -123,9 +123,7 @@ router.route('/process-grid').post(async (req,res) => {
                         bee.action = 'Pending';
                     }
                     else{
-                        // console.log('Bee came from' + bee.cameFrom);
                         var array = getValidDirections(bee);
-                        console.log('Directions: ' + array);
                         var rand = getRandomNumber(0, array.length);
                         var xDirection = 0;
                         var yDirection = 0;
@@ -194,8 +192,8 @@ router.route('/process-grid').post(async (req,res) => {
                     var xCoord = getRandomNumber(30, 160);
                     var yCoord = getRandomNumber(30, 110);
 
-                    bee.xDestination = bee.xLocationFood * width + xCoord;
-                    bee.yDestination = bee.yLocationFood * height + yCoord;
+                    bee.xDestination = bee.yLocationFood * width + xCoord;
+                    bee.yDestination = bee.xLocationFood * height + yCoord;
                     bee.action = 'Pending';
                     break;
             }   
@@ -346,7 +344,7 @@ function calculateLogGrowth(rMax, K, N){
 }
 function isValidCell(grid, bee){
     var map = grid.grid;
-    console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
+    // console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
     // console.log("GRID CELL:  "+ map[bee.xLocationGrid][bee.yLocationGrid]);
     if(map[bee.xLocationGrid][bee.yLocationGrid].nectar >= capacity){
         return true;
@@ -356,7 +354,7 @@ function isValidCell(grid, bee){
 function getValidDirections(bee){
     var directions = [];
     directions.push(0, 1, 2, 3);
-    console.log("Came from: " + bee.cameFrom);
+    // console.log("Came from: " + bee.cameFrom);
     switch(bee.cameFrom){
         case('NORTH'):
             directions = removeFromArray(directions, 0);
