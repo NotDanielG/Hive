@@ -6,7 +6,8 @@ let MAX_LENGTH = 4;
 let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
-let capacity = 8;
+let capacity = 16;
+let BEE_UPKEEP = 4;
 
 let NORTH = 0;
 let EAST = 1;
@@ -17,11 +18,7 @@ let width = 191;
 let height = 135;
 
 //TODO: 
-//Traveling function for bees - Completed Untested
-//Grid changes based on flowerCount - Completed Untested
-//Hive makes new bees - Completed Untested
-//Energy Implementation + go back on low energy - Not completed
-
+//Bee can sense one cell around them 
 
 //Later TODO:
 //Pollination(can include a round based timer on the cell), based on a number, can increase flowerCount
@@ -166,6 +163,7 @@ router.route('/process-grid').post(async (req,res) => {
                         bee.intent = 'Deposit';
                         grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
                         grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinated = true;
+                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinationCounter += .01;
                         bee.nectar += capacity;
 
                         bee.xLocationFood = bee.xLocationGrid;
@@ -186,7 +184,7 @@ router.route('/process-grid').post(async (req,res) => {
                 case('Deposit'):
                     //energy usage func
                     bee.intent = 'Foraging';
-                    hive.honey += bee.nectar;
+                    hive.honey += capacity;
                     bee.nectar -= bee.nectar;
 
                     var xCoord = getRandomNumber(30, 160);
@@ -210,8 +208,8 @@ router.route('/process-grid').post(async (req,res) => {
                 
                 var K = grid.grid[i][j].flowerMax;
                 var N = grid.grid[i][j].flowerCount;
-                var logGrowthRate = calculateLogGrowth(rMax, K, N);
-
+                var logGrowthRate = calculateLogGrowth(rMax + grid.grid[i][j].pollinationCounter, K, N);
+                
                 if(grid.grid[i][j].pollinated){
                     logGrowthRate = Math.floor(logGrowthRate*1.2);
                 }
@@ -220,14 +218,17 @@ router.route('/process-grid').post(async (req,res) => {
                     logGrowthRate = 1;
                 }
                 grid.grid[i][j].flowerCount += logGrowthRate;
+                grid.grid[i][j].pollinationCounter = 0;
 
             }
         }
-        grid.tick = 0;
+        
     }
 
     // Make new bees, need to add destination
-    if(hive.honey >= hive.array.length*8){
+    // console.log(hive.honey )
+    
+    if(hive.honey >= hive.array.length*BEE_UPKEEP){
     //     var xCoord = getRandomNumber(80, 110);
     //     var yCoord = getRandomNumber(50, 70);
         var bee = generateBee();
@@ -251,7 +252,12 @@ router.route('/process-grid').post(async (req,res) => {
     Grid.findOne({hive: req.body.params.hive})
         .then((result) => {
             result.grid = grid.grid;
-            result.tick += 1;
+            if(result.tick >= 50){
+                result.tick = 0;
+            }
+            else{
+                result.tick += 1;
+            }
             result.save()
                 .then({  
                     // () => console.log("Saved")  

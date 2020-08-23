@@ -84,7 +84,7 @@ export default class Map extends Component {
         return (
             <div className = "map-container">
                 <div className = "id-tag">Hive ID: {this.state.hive} <br/>
-                    <button onClick = {this.intervalButton}>Start Process</button>
+                    <button onClick = {this.intervalButton}>Toggle Process</button>
                 </div>
                 <div className = "grid-container" >
                     <div className = "grid">
