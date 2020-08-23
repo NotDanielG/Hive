@@ -59,9 +59,11 @@ router.route('/get-cell-info').get((req, res) => {
 });
 
 router.route('/process-grid').post(async (req,res) => {
-    console.log("RECIEVED");
+    // var arr = [0,1,2,3];
+    
     var hivePromise = getHive(req);
     var gridPromise = getGrid(req);
+    
     var hive = null;
     var grid = null;
     await hivePromise.then((result) => {
@@ -78,8 +80,8 @@ router.route('/process-grid').post(async (req,res) => {
         switch(bee.action){
             case('Pending'):
                 var speed = 10;
-                console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
-                console.log( bee.xLocation + " " + bee.yLocation + " vs "+bee.xDestination + " " + bee.yDestination);
+                // console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
+                // console.log( bee.xLocation + " " + bee.yLocation + " vs "+bee.xDestination + " " + bee.yDestination);
                 var xDifference = bee.xDestination - bee.xLocation;
                 var yDifference = bee.yDestination - bee.yLocation;
                 var angle = Math.atan2(yDifference, xDifference);
@@ -121,28 +123,30 @@ router.route('/process-grid').post(async (req,res) => {
                         bee.action = 'Pending';
                     }
                     else{
+                        // console.log('Bee came from' + bee.cameFrom);
                         var array = getValidDirections(bee);
-                        var rand = getRandomNumber(0,array.length);
+                        console.log('Directions: ' + array);
+                        var rand = getRandomNumber(0, array.length);
                         var xDirection = 0;
                         var yDirection = 0;
                         
-                        if(rand == NORTH){
-                            console.log("NORTH");
+                        if(array[rand] == NORTH){
+                            // console.log("NORTH");
                             bee.cameFrom = "SOUTH";
                             yDirection = -1;
                         }
-                        if(rand == EAST){
-                            console.log("EAST");
+                        if(array[rand] == EAST){
+                            // console.log("EAST");
                             bee.cameFrom = "WEST";
                             xDirection = 1;
                         }
-                        if(rand == SOUTH){
-                            console.log("SOUTH");
+                        if(array[rand] == SOUTH){
+                            // console.log("SOUTH");
                             bee.cameFrom = "NORTH";
                             yDirection = 1;
                         }
-                        if(rand == WEST){
-                            console.log("WEST");
+                        if(array[rand] == WEST){
+                            // console.log("WEST");
                             bee.cameFrom = "EAST";
                             xDirection = -1;
                         }
@@ -224,18 +228,20 @@ router.route('/process-grid').post(async (req,res) => {
         grid.tick = 0;
     }
 
-    //Make new bees
+    // Make new bees, need to add destination
     if(hive.honey >= hive.array.length*8){
-        var xCoord = getRandomNumber(80, 110);
-        var yCoord = getRandomNumber(50, 70);
-        hive.array.push(new Bee(10, "", "Searching", "None", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
+    //     var xCoord = getRandomNumber(80, 110);
+    //     var yCoord = getRandomNumber(50, 70);
+        var bee = generateBee();
+        hive.array.push(bee);
+        // hive.array.push(new Bee(10, "", "Searching", "None", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
         hive.honey -= capacity;
     }
 
     Hive.findOne({hive: req.body.params.hive})
         .then((result) => {
             result.array = hive.array;
-            result.honey = result.honey;
+            result.honey = hive.honey;
             result.save()
                 .then(() => {
                     // console.log("Saved")
@@ -255,6 +261,7 @@ router.route('/process-grid').post(async (req,res) => {
                 .catch(err => res.status(400).json('Error '+ err));
         })
         .catch(err => res.json('Could not be found'));
+    res.end();
     
 });
 
@@ -286,40 +293,41 @@ router.route('/add-new-hive').post((req, res) => {
     const x = GRID_CENTER;
     const array = [];
     const y = GRID_CENTER;
-    const xCoord = getRandomNumber(80, 110);
-    const yCoord = getRandomNumber(50, 70);
-    var rand = getRandomNumber(0,3);
-    var xDir = 0;
-    var yDir = 0;
-    var cameFrom = "";
-    switch(rand){
-        case(NORTH):
-            console.log("NORTH");
-            cameFrom = "SOUTH";
-            yDir = -1;
-            break;
-        case(EAST):
-            xDir = 1;
-            console.log("EAST");
-            cameFrom = "WEST";
-            break;
-        case(SOUTH):
-            yDir = 1;
-            console.log("SOUTH");
-            cameFrom = "NORTH";
-            break;
-        case(WEST):
-            xDir = -1;
-            console.log("WEST");
-            cameFrom = "EAST";
-            break;
-    }
-    var xFirst = getRandomNumber(30, 160);
-    var yFirst = getRandomNumber(30, 110);
-    var xDest = (GRID_CENTER + xDir)*191 + xFirst;
-    var yDest = (GRID_CENTER + yDir)*135 + yFirst;
+    // const xCoord = getRandomNumber(80, 110);
+    // const yCoord = getRandomNumber(50, 70);
+    // var rand = getRandomNumber(0,3);
+    // var xDir = 0;
+    // var yDir = 0;
+    // var cameFrom = "";
+    // switch(rand){
+    //     case(NORTH):
+    //         // console.log("NORTH");
+    //         cameFrom = "SOUTH";
+    //         yDir = -1;
+    //         break;
+    //     case(EAST):
+    //         xDir = 1;
+    //         // console.log("EAST");
+    //         cameFrom = "WEST";
+    //         break;
+    //     case(SOUTH):
+    //         yDir = 1;
+    //         // console.log("SOUTH");
+    //         cameFrom = "NORTH";
+    //         break;
+    //     case(WEST):
+    //         xDir = -1;
+    //         // console.log("WEST");
+    //         cameFrom = "EAST";
+    //         break;
+    // }
+    // var xFirst = getRandomNumber(30, 160);
+    // var yFirst = getRandomNumber(30, 110);
+    // var xDest = (GRID_CENTER + xDir)*191 + xFirst;
+    // var yDest = (GRID_CENTER + yDir)*135 + yFirst;
 
-    var bee = new Bee(10, "", "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest);
+    // var bee = new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest);
+    var bee = generateBee();
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
@@ -374,7 +382,7 @@ function calculateLogGrowth(rMax, K, N){
 function isValidCell(grid, bee){
     var map = grid.grid;
     console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
-    console.log("GRID CELL:  "+ map[bee.xLocationGrid][bee.yLocationGrid]);
+    // console.log("GRID CELL:  "+ map[bee.xLocationGrid][bee.yLocationGrid]);
     if(map[bee.xLocationGrid][bee.yLocationGrid].nectar >= capacity){
         return true;
     }
@@ -383,34 +391,35 @@ function isValidCell(grid, bee){
 function getValidDirections(bee){
     var directions = [];
     directions.push(0, 1, 2, 3);
+    console.log("Came from: " + bee.cameFrom);
     switch(bee.cameFrom){
-        case('North'):
+        case('NORTH'):
             directions = removeFromArray(directions, 0);
             break;
-        case('East'):
+        case('EAST'):
             directions = removeFromArray(directions, 1);
             break;
-        case('South'):
+        case('SOUTH'):
             directions = removeFromArray(directions, 2);
             break;
-        case('West'):
+        case('WEST'):
             directions = removeFromArray(directions, 3);
             break;
     }
     switch(bee.xLocationGrid){
         case(0):
-            directions = removeFromArray(directions, WEST);
+            directions = removeFromArray(directions, NORTH);
             break;
-        case(GRID_SIZE):
-            directions = removeFromArray(directions, EAST);
+        case(GRID_SIZE-1):
+            directions = removeFromArray(directions, SOUTH);
             break;
     }
     switch(bee.yLocationGrid){
         case(0):
-            directions = removeFromArray(directions, NORTH);
+            directions = removeFromArray(directions, WEST);
             break;
-        case(GRID_SIZE):
-            directions = removeFromArray(directions, SOUTH);
+        case(GRID_SIZE-1):
+            directions = removeFromArray(directions, EAST);
             break;
     }
     if(bee.xLocationGrid == 2 && bee.yLocationGrid == 3){ //NORTH OF HIVE
@@ -426,9 +435,6 @@ function getValidDirections(bee){
         directions = removeFromArray(directions, WEST);
     }
     return directions;
-    
-
-    
 }
 function removeFromArray(array, value){
     for(var i = 0; i < array.length; i++){
@@ -438,6 +444,38 @@ function removeFromArray(array, value){
         }
     }
     return array;
+}
+function generateBee(){
+    var xCoord = getRandomNumber(80, 110);
+    var yCoord = getRandomNumber(50, 70);
+    var rand = getRandomNumber(0,3);
+    var xDir = 0;
+    var yDir = 0;
+    var cameFrom = "";
+    switch(rand){
+        case(NORTH):
+            cameFrom = "SOUTH";
+            yDir = -1;
+            break;
+        case(EAST):
+            xDir = 1;
+            cameFrom = "WEST";
+            break;
+        case(SOUTH):
+            yDir = 1;
+            cameFrom = "NORTH";
+            break;
+        case(WEST):
+            xDir = -1;
+            cameFrom = "EAST";
+            break;
+    }
+    var xFirst = getRandomNumber(30, 160);
+    var yFirst = getRandomNumber(30, 110);
+    var xDest = (GRID_CENTER + xDir)*191 + xFirst;
+    var yDest = (GRID_CENTER + yDir)*135 + yFirst;
+
+    return new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest);
 }
 async function getHive(req){
     var val = null
