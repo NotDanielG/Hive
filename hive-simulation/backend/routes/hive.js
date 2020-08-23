@@ -19,9 +19,9 @@ let height = 135;
 
 //TODO: 
 //Bee can sense one cell around them 
+//Bee sharing food location
 
 //Later TODO:
-//Pollination(can include a round based timer on the cell), based on a number, can increase flowerCount
 //On click get cell info and bees in the cell currently
 
 

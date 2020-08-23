@@ -29,7 +29,7 @@ export default class Map extends Component {
     }
     intervalButton = () => {
         if(this.interval == null){
-            this.interval = setInterval(this.updateGrid.bind(this), 1000);
+            this.interval = setInterval(this.updateGrid.bind(this), 250);
         }
         else{
             this.interval = clearInterval(this.interval);

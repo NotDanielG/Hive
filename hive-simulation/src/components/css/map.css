@@ -6,7 +6,7 @@
     width:15%;
     height:100%;
     float: left;
-    background-color: aqua;
+    background-color: #282c34;
 }
 .grid-container{
     position: relative;
@@ -27,5 +27,5 @@
     width:15%;
     height:100%;
     float:left;
-    background-color: red;
+    background-color: #282c34;
 }
