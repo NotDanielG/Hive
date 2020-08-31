@@ -121,26 +121,30 @@ router.route('/process-grid').post(async (req,res) => {
                     }
                     else{
                         var array = getValidDirections(bee);
-                        var rand = getRandomNumber(0, array.length);
+
+                        var selection = selectDirection(array, bee, grid);
+                        if(selection == -1){
+                            selection = array[getRandomNumber(0, array.length)];
+                        }
                         var xDirection = 0;
                         var yDirection = 0;
                         
-                        if(array[rand] == NORTH){
+                        if(selection == NORTH){
                             // console.log("NORTH");
                             bee.cameFrom = "SOUTH";
                             yDirection = -1;
                         }
-                        if(array[rand] == EAST){
+                        if(selection == EAST){
                             // console.log("EAST");
                             bee.cameFrom = "WEST";
                             xDirection = 1;
                         }
-                        if(array[rand] == SOUTH){
+                        if(selection == SOUTH){
                             // console.log("SOUTH");
                             bee.cameFrom = "NORTH";
                             yDirection = 1;
                         }
-                        if(array[rand] == WEST){
+                        if(selection == WEST){
                             // console.log("WEST");
                             bee.cameFrom = "EAST";
                             xDirection = -1;
@@ -168,6 +172,7 @@ router.route('/process-grid').post(async (req,res) => {
 
                         bee.xLocationFood = bee.xLocationGrid;
                         bee.yLocationFood = bee.yLocationGrid;
+                        bee.quality = grid.grid[bee.xLocationGrid][bee.yLocationGrid].quality;
 
                         var xCoord = getRandomNumber(80, 110);
                         var yCoord = getRandomNumber(50, 70);
@@ -203,7 +208,7 @@ router.route('/process-grid').post(async (req,res) => {
         var rMax = 0.01;
         for(var i = 0; i < GRID_SIZE; i++) {
             for(var j = 0; j < GRID_SIZE; j++){
-                var regenerate = Math.floor((grid.grid[i][j].flowerCount)/3);
+                var regenerate = Math.floor((grid.grid[i][j].flowerCount/3) * grid.grid[i][j].quality/10);
                 grid.grid[i][j].nectar += regenerate;
                 
                 var K = grid.grid[i][j].flowerMax;
@@ -226,14 +231,10 @@ router.route('/process-grid').post(async (req,res) => {
     }
 
     // Make new bees, need to add destination
-    // console.log(hive.honey )
     
     if(hive.honey >= hive.array.length*BEE_UPKEEP){
-    //     var xCoord = getRandomNumber(80, 110);
-    //     var yCoord = getRandomNumber(50, 70);
         var bee = generateBee();
         hive.array.push(bee);
-        // hive.array.push(new Bee(10, "", "Searching", "None", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
         hive.honey -= capacity;
     }
 
@@ -245,9 +246,8 @@ router.route('/process-grid').post(async (req,res) => {
                 .then(() => {
                     // console.log("Saved")
                 })
-                .catch(err => res.status(400).json('Error '+ err));
         })
-        .catch(err => res.json('Could not be found'));
+        .catch(err => res.json(err));
     
     Grid.findOne({hive: req.body.params.hive})
         .then((result) => {
@@ -279,7 +279,7 @@ router.route('/add-bee').post((req, res) => {
     }
     Hive.findOne({hive: req.query.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", randomizedIntent, "Completed",false, GRID_CENTER * width + xCoord, GRID_CENTER * height + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1));
+            result.array.push(new Bee(10, "", randomizedIntent, "Completed",false, GRID_CENTER * width + xCoord, GRID_CENTER * height + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1, 0));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -357,6 +357,52 @@ function isValidCell(grid, bee){
     }
     return false;
 }
+function selectDirection(array, bee, grid){
+    //NORTH 0, -1
+    //EAST 1, 0
+    //SOUTH 0, 1
+    //WEST -1, 0
+    var flowerCount = 0;
+    var foodDirection = -1;
+    var quality = 0; //Feature to be added
+    var grid = grid.grid;
+    var xBee = bee.xLocationGrid;
+    var yBee = bee.yLocationGrid;
+
+    for(var i = 0; i < array.length; i++){
+        switch(array[i]){
+            case(NORTH):
+                if(grid[xBee-1][yBee].flowerCount > 0 && grid[xBee-1][yBee].quality > quality){
+                    foodDirection = NORTH;
+                    flowerCount = grid[xBee-1][yBee].flowerCount;
+                    quality = grid[xBee-1][yBee].quality;
+                }
+                break;
+            case(SOUTH):
+                if(grid[xBee+1][yBee].flowerCount > 0 && grid[xBee+1][yBee].quality > quality){
+                    foodDirection = SOUTH;
+                    flowerCount = grid[xBee+1][yBee].flowerCount;
+                    quality = grid[xBee+1][yBee].quality;
+                }
+                break;
+            case(EAST):
+                if(grid[xBee][yBee+1].flowerCount > 0 && grid[xBee][yBee+1].quality > quality){
+                    foodDirection = EAST;
+                    flowerCount = grid[xBee+1][yBee].flowerCount;
+                    quality = grid[xBee+1][yBee].quality;
+                }
+                break;
+            case(WEST):
+                if(grid[xBee][yBee-1].flowerCount > 0 && grid[xBee][yBee-1].quality > quality){
+                    foodDirection = WEST;
+                    flowerCount = grid[xBee][yBee-1].flowerCount;
+                    quality = grid[xBee][yBee-1].quality;
+                }
+                break;
+        }
+    }
+    return foodDirection;
+}
 function getValidDirections(bee){
     var directions = [];
     directions.push(0, 1, 2, 3);
@@ -403,6 +449,41 @@ function getValidDirections(bee){
     if(bee.xLocationGrid == 3 && bee.yLocationGrid == 4){ //EAST OF HIVE
         directions = removeFromArray(directions, WEST);
     }
+    if(directions.length == 0){
+        direction = [];
+        directions.push(1,2,3,4);
+
+        switch(bee.xLocationGrid){
+            case(0):
+                directions = removeFromArray(directions, NORTH);
+                break;
+            case(GRID_SIZE-1):
+                directions = removeFromArray(directions, SOUTH);
+                break;
+        }
+        switch(bee.yLocationGrid){
+            case(0):
+                directions = removeFromArray(directions, WEST);
+                break;
+            case(GRID_SIZE-1):
+                directions = removeFromArray(directions, EAST);
+                break;
+        }
+        switch(bee.cameFrom){
+            case('NORTH'):
+                directions = removeFromArray(directions, 0);
+                break;
+            case('EAST'):
+                directions = removeFromArray(directions, 1);
+                break;
+            case('SOUTH'):
+                directions = removeFromArray(directions, 2);
+                break;
+            case('WEST'):
+                directions = removeFromArray(directions, 3);
+                break;
+        }
+    }   
     return directions;
 }
 function removeFromArray(array, value){
@@ -444,7 +525,7 @@ function generateBee(){
     var xDest = (GRID_CENTER + xDir)*191 + xFirst;
     var yDest = (GRID_CENTER + yDir)*135 + yFirst;
 
-    return new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest);
+    return new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest, 0);
 }
 async function getHive(req){
     var val = null
@@ -487,10 +568,11 @@ class Cell{
         this.xLocationGrid = xLocationGrid;
         this.yLocationGrid = yLocationGrid;
         this.pollinationCounter = 0;
+        this.quality = getRandomNumber(70, 100);
     }
 }
 class Bee{
-    constructor(energy, cameFrom, intent, action,hasPollen, xLocation, yLocation, xLocationGrid, yLocationGrid, xLocationFood, yLocationFood, xDestination, yDestination){
+    constructor(energy, cameFrom, intent, action,hasPollen, xLocation, yLocation, xLocationGrid, yLocationGrid, xLocationFood, yLocationFood, xDestination, yDestination, quality){
         this.energy = energy;
         this.cameFrom = cameFrom;
         this.intent = intent;
@@ -504,6 +586,7 @@ class Bee{
         this.yLocationFood = yLocationFood;
         this.xDestination = xDestination;
         this.yDestination = yDestination;
+        this.quality = quality;
     }
     setIntent(intended){
         this.intent = intended;
