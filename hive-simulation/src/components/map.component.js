@@ -11,7 +11,9 @@ export default class Map extends Component {
         super(props);
         this.state = {hive: '',
         grid: [],
-        bees: []};
+        bees: [],
+        honey: 0,
+        beeCount: 0};
         this.interval = null;
         this.hiveID = '';
         this.updateGrid.bind(this)
@@ -29,7 +31,7 @@ export default class Map extends Component {
     }
     intervalButton = () => {
         if(this.interval == null){
-            this.interval = setInterval(this.updateGrid.bind(this), 250);
+            this.interval = setInterval(this.updateGrid.bind(this), 150);
         }
         else{
             this.interval = clearInterval(this.interval);
@@ -60,6 +62,8 @@ export default class Map extends Component {
         })
         .then((response) => {   
             var temp = [];
+            this.setState({honey: response.data[0].honey,
+                           beeCount: response.data[0].array.length});
             for(var i = 0; i < response.data[0].array.length; i++){
                 temp.push(<Bee x={response.data[0].array[i].xLocation} y ={response.data[0].array[i].yLocation} />);
             }
@@ -84,6 +88,8 @@ export default class Map extends Component {
         return (
             <div className = "map-container">
                 <div className = "id-tag">Hive ID: {this.state.hive} <br/>
+                    <div>Honey: {this.state.honey}</div>
+                    <div>Bee Count: {this.state.beeCount}</div>
                     <button onClick = {this.intervalButton}>Toggle Process</button>
                 </div>
                 <div className = "grid-container" >

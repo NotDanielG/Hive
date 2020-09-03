@@ -18,12 +18,8 @@ let width = 191;
 let height = 135;
 
 //TODO: 
-//Bee can sense one cell around them 
-//Bee sharing food location
-
-//Later TODO:
-//On click get cell info and bees in the cell currently
-
+//Bee can sense one cell around them - DONE
+//Bee sharing food location - 
 
 router.route('/get-current-hive').get((req,res) => {
     Hive.find({hive: req.query.hive})
@@ -77,8 +73,6 @@ router.route('/process-grid').post(async (req,res) => {
         switch(bee.action){
             case('Pending'):
                 var speed = 10;
-                // console.log(bee.xLocationGrid + " " + bee.yLocationGrid);
-                // console.log( bee.xLocation + " " + bee.yLocation + " vs "+bee.xDestination + " " + bee.yDestination);
                 var xDifference = bee.xDestination - bee.xLocation;
                 var yDifference = bee.yDestination - bee.yLocation;
                 var angle = Math.atan2(yDifference, xDifference);
@@ -88,7 +82,6 @@ router.route('/process-grid').post(async (req,res) => {
 
                 bee.xLocation += velocityX;
                 bee.yLocation += velocityY;
-                // console.log(velocityX+ " " +velocityY);
 
                 if((bee.xLocation <= bee.xDestination+5 && bee.xLocation >= bee.xDestination-5) && (bee.yLocation <= bee.yDestination+5 && bee.yLocation >= bee.yDestination-5)){
                     bee.action = 'Completed';
@@ -130,22 +123,18 @@ router.route('/process-grid').post(async (req,res) => {
                         var yDirection = 0;
                         
                         if(selection == NORTH){
-                            // console.log("NORTH");
                             bee.cameFrom = "SOUTH";
                             yDirection = -1;
                         }
                         if(selection == EAST){
-                            // console.log("EAST");
                             bee.cameFrom = "WEST";
                             xDirection = 1;
                         }
                         if(selection == SOUTH){
-                            // console.log("SOUTH");
                             bee.cameFrom = "NORTH";
                             yDirection = 1;
                         }
                         if(selection == WEST){
-                            // console.log("WEST");
                             bee.cameFrom = "EAST";
                             xDirection = -1;
                         }
@@ -205,34 +194,12 @@ router.route('/process-grid').post(async (req,res) => {
 
     //Grid Update
     if(grid.tick >= 50){
-        var rMax = 0.01;
-        for(var i = 0; i < GRID_SIZE; i++) {
-            for(var j = 0; j < GRID_SIZE; j++){
-                var regenerate = Math.floor((grid.grid[i][j].flowerCount/3) * grid.grid[i][j].quality/10);
-                grid.grid[i][j].nectar += regenerate;
-                
-                var K = grid.grid[i][j].flowerMax;
-                var N = grid.grid[i][j].flowerCount;
-                var logGrowthRate = calculateLogGrowth(rMax + grid.grid[i][j].pollinationCounter, K, N);
-                
-                if(grid.grid[i][j].pollinated){
-                    logGrowthRate = Math.floor(logGrowthRate*1.2);
-                }
-
-                if(N > 0 && logGrowthRate <= 0){
-                    logGrowthRate = 1;
-                }
-                grid.grid[i][j].flowerCount += logGrowthRate;
-                grid.grid[i][j].pollinationCounter = 0;
-
-            }
-        }
-        
+        grid = updateGrid(grid);
     }
 
     // Make new bees, need to add destination
     
-    if(hive.honey >= hive.array.length*BEE_UPKEEP){
+    if(hive.honey >= hive.array.length*BEE_UPKEEP && hive.array.length < 60){
         var bee = generateBee();
         hive.array.push(bee);
         hive.honey -= capacity;
@@ -247,7 +214,7 @@ router.route('/process-grid').post(async (req,res) => {
                     // console.log("Saved")
                 })
         })
-        .catch(err => res.json(err));
+        .catch(err => console.log("Error saving hive: " + err));
     
     Grid.findOne({hive: req.body.params.hive})
         .then((result) => {
@@ -264,7 +231,7 @@ router.route('/process-grid').post(async (req,res) => {
                 })
                 .catch(err => res.status(400).json('Error '+ err));
         })
-        .catch(err => res.json('Could not be found'));
+        .catch(err =>  console.log("Error saving grid: " + err));
     res.end();
     
 });
@@ -345,6 +312,30 @@ router.route('/delete-hive').post((req, res) => {
         .catch(err => res.status(400).json('Error: ' + err));
 });
 
+function updateGrid(grid){
+    var rMax = 0.01;
+    for(var i = 0; i < GRID_SIZE; i++) {
+        for(var j = 0; j < GRID_SIZE; j++){
+            var regenerate = Math.floor((grid.grid[i][j].flowerCount/3) * grid.grid[i][j].quality/10);
+            grid.grid[i][j].nectar += regenerate;
+            
+            var K = grid.grid[i][j].flowerMax;
+            var N = grid.grid[i][j].flowerCount;
+            var logGrowthRate = calculateLogGrowth(rMax + grid.grid[i][j].pollinationCounter, K, N);
+            
+            if(grid.grid[i][j].pollinated){
+                logGrowthRate = Math.floor(logGrowthRate*1.2);
+            }
+
+            if(N > 0 && logGrowthRate <= 0){
+                logGrowthRate = 1;
+            }
+            grid.grid[i][j].flowerCount += logGrowthRate;
+            grid.grid[i][j].pollinationCounter = 0;
+        }
+    }
+    return grid;
+}
 function calculateLogGrowth(rMax, K, N){
     return Math.round(rMax*N*((K-N)/K));
 }
