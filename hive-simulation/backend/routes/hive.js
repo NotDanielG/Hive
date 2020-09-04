@@ -8,6 +8,10 @@ let GRID_SIZE = 7;
 let GRID_CENTER = Math.floor(GRID_SIZE/2);
 let capacity = 16;
 let BEE_UPKEEP = 4;
+let BEE_ENERGY_MAX = 10;
+let MAX_BEE = 500;
+let BEE_SPEED = 15;
+let MARGIN_ERROR = 10;
 
 let NORTH = 0;
 let EAST = 1;
@@ -69,21 +73,23 @@ router.route('/process-grid').post(async (req,res) => {
     //Bee Update
     for(var i = 0; i < hive.array.length; i++){
         var bee = hive.array[i];
+        // console.log('Intent: ' + bee.intent);
+        // console.log('Action: ' + bee.action);
         var doIntent = false;
         switch(bee.action){
             case('Pending'):
-                var speed = 10;
                 var xDifference = bee.xDestination - bee.xLocation;
                 var yDifference = bee.yDestination - bee.yLocation;
                 var angle = Math.atan2(yDifference, xDifference);
 
-                var velocityX = Math.cos(angle)*speed;
-                var velocityY = Math.sin(angle)*speed;
+                var velocityX = Math.cos(angle)*BEE_SPEED;
+                var velocityY = Math.sin(angle)*BEE_SPEED;
 
                 bee.xLocation += velocityX;
                 bee.yLocation += velocityY;
 
-                if((bee.xLocation <= bee.xDestination+5 && bee.xLocation >= bee.xDestination-5) && (bee.yLocation <= bee.yDestination+5 && bee.yLocation >= bee.yDestination-5)){
+                if((bee.xLocation <= bee.xDestination+MARGIN_ERROR && bee.xLocation >= bee.xDestination-MARGIN_ERROR) && 
+                (bee.yLocation <= bee.yDestination+MARGIN_ERROR && bee.yLocation >= bee.yDestination-MARGIN_ERROR)){
                     bee.action = 'Completed';
                     doIntent = true;
                 }
@@ -141,8 +147,8 @@ router.route('/process-grid').post(async (req,res) => {
                         bee.xLocationGrid += yDirection;
                         bee.yLocationGrid += xDirection;
 
-                        var xCoord = getRandomNumber(30, 160);
-                        var yCoord = getRandomNumber(30, 110);
+                        var xCoord = randomXCoord();
+                        var yCoord = randomYCoord();
 
                         bee.xDestination = bee.yLocationGrid * width + xCoord;
                         bee.yDestination = bee.xLocationGrid * height + yCoord;
@@ -170,14 +176,12 @@ router.route('/process-grid').post(async (req,res) => {
                         bee.action = 'Pending';
                     }
                     else{
-                        bee.action = 'Searching';
+                        bee.intent = 'Searching';
                     }
                     break;
                 case('Waiting'):
                     break;
                 case('Deposit'):
-                    //energy usage func
-                    bee.intent = 'Foraging';
                     hive.honey += capacity;
                     bee.nectar -= bee.nectar;
 
@@ -186,6 +190,7 @@ router.route('/process-grid').post(async (req,res) => {
 
                     bee.xDestination = bee.yLocationFood * width + xCoord;
                     bee.yDestination = bee.xLocationFood * height + yCoord;
+                    bee.intent = 'Foraging';
                     bee.action = 'Pending';
                     break;
             }   
@@ -195,43 +200,22 @@ router.route('/process-grid').post(async (req,res) => {
     //Grid Update
     if(grid.tick >= 50){
         grid = updateGrid(grid);
+        grid.tick = 0;
     }
 
     // Make new bees, need to add destination
-    
-    if(hive.honey >= hive.array.length*BEE_UPKEEP && hive.array.length < 60){
+    if(hive.honey >= hive.array.length*BEE_UPKEEP/4 && hive.array.length < MAX_BEE){
         var bee = generateBee();
         hive.array.push(bee);
         hive.honey -= capacity;
     }
+    var current_grid_tick = grid.tick+1;
 
-    Hive.findOne({hive: req.body.params.hive})
-        .then((result) => {
-            result.array = hive.array;
-            result.honey = hive.honey;
-            result.save()
-                .then(() => {
-                    // console.log("Saved")
-                })
-        })
-        .catch(err => console.log("Error saving hive: " + err));
+    Hive.updateOne({hive: req.body.params.hive}, {$set:{array: hive.array, honey: hive.honey}})
+        .catch(err => console.log('Error saving Hive' + err ));
+    Grid.updateOne({hive: req.body.params.hive}, {$set:{grid: grid.grid, tick: current_grid_tick}})
+        .catch(err => console.log('Error saving Grid' + err ));
     
-    Grid.findOne({hive: req.body.params.hive})
-        .then((result) => {
-            result.grid = grid.grid;
-            if(result.tick >= 50){
-                result.tick = 0;
-            }
-            else{
-                result.tick += 1;
-            }
-            result.save()
-                .then({  
-                    // () => console.log("Saved")  
-                })
-                .catch(err => res.status(400).json('Error '+ err));
-        })
-        .catch(err =>  console.log("Error saving grid: " + err));
     res.end();
     
 });
@@ -246,7 +230,7 @@ router.route('/add-bee').post((req, res) => {
     }
     Hive.findOne({hive: req.query.hive})
         .then((result)=> {
-            result.array.push(new Bee(10, "", randomizedIntent, "Completed",false, GRID_CENTER * width + xCoord, GRID_CENTER * height + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1, 0));
+            result.array.push(new Bee(BEE_ENERGY_MAX, "", randomizedIntent, "Completed",false, GRID_CENTER * width + xCoord, GRID_CENTER * height + yCoord, GRID_CENTER, GRID_CENTER, -1, -1, -1, -1, 0));
             result.save()
                 .then(() => res.json('Bee created'))
                 .catch(err => res.status(400).json('Error: ' + err));
@@ -263,7 +247,8 @@ router.route('/add-new-hive').post((req, res) => {
     const honey = 100;
     const x = GRID_CENTER;
     const array = [];
-    const y = GRID_CENTER; var bee = generateBee();
+    const y = GRID_CENTER; 
+    var bee = generateBee();
     array.push(bee);
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
@@ -311,7 +296,14 @@ router.route('/delete-hive').post((req, res) => {
         })
         .catch(err => res.status(400).json('Error: ' + err));
 });
-
+function randomXCoord(){
+    var xCoord = getRandomNumber(30, 160);
+    return xCoord;
+}
+function randomYCoord(){
+    var yCoord = getRandomNumber(30, 110);
+    return yCoord;
+}
 function updateGrid(grid){
     var rMax = 0.01;
     for(var i = 0; i < GRID_SIZE; i++) {
@@ -516,7 +508,7 @@ function generateBee(){
     var xDest = (GRID_CENTER + xDir)*191 + xFirst;
     var yDest = (GRID_CENTER + yDir)*135 + yFirst;
 
-    return new Bee(10, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest, 0);
+    return new Bee(BEE_ENERGY_MAX, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest, 0);
 }
 async function getHive(req){
     var val = null
@@ -578,9 +570,9 @@ class Bee{
         this.xDestination = xDestination;
         this.yDestination = yDestination;
         this.quality = quality;
-    }
-    setIntent(intended){
-        this.intent = intended;
+        this.tick = 0;
+        this.recover_full = false;
+        this.nectar = 0;
     }
 }
 module.exports = router;
