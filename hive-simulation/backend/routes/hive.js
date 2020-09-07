@@ -76,9 +76,16 @@ router.route('/process-grid').post(async (req,res) => {
     var food_locations = [];
     var waiting_bees = [];
     var waiting_bees_index = [];
+
+    var dead_bees_index = [];
     for(var i = 0; i < hive.array.length; i++){
         var bee = hive.array[i];
         var doIntent = false;
+        if(bee.energy == 0){
+            dead_bees_index.push(i);
+            bee.action = 'Completed';
+            bee.intent = 'Death'
+        }
         // console.log(bee.xLocation + ' ' + bee.yLocation + ' '+ bee.xDestination + ' ' + bee.yDestination + ' ' + bee.intent + ' ' + bee.action);
         switch(bee.action){
             case('Pending'):
@@ -125,19 +132,22 @@ router.route('/process-grid').post(async (req,res) => {
             }
             else{
                 switch(bee.intent){
+                    case('Death'):
+                        break;
                     case('Searching'):
                         if(isValidCell(grid, bee)){
-                            bee.intent = 'Deposit';
                             grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
                             bee.nectar += capacity;
 
                             bee.xLocationFood = bee.xLocationGrid;
                             bee.yLocationFood = bee.yLocationGrid;
 
-                            var xCoord = getRandomNumber(80, 110);
-                            var yCoord = getRandomNumber(50, 70);
+                            var xCoord = randomXCoordHive();
+                            var yCoord = randomYCoordHive();
                             bee.xDestination = GRID_CENTER * width + xCoord;
                             bee.yDestination = GRID_CENTER * height + yCoord;
+
+                            bee.intent = 'Deposit';
                             bee.action = 'Pending';
                         }
                         else{
@@ -229,7 +239,6 @@ router.route('/process-grid').post(async (req,res) => {
                             bee.intent = 'Waiting'; 
                             bee.action = 'Completed';
                         }
-                        
                         break;
                     case('Deposit'):
                         var energy_required = BEE_ENERGY_MAX-bee.energy;
@@ -255,9 +264,8 @@ router.route('/process-grid').post(async (req,res) => {
         }
     }
     //Bee gets shared locations
-    //Need to fix sharing
     if(food_locations.length > 0){
-        food_locations.sort(function(a,b){
+        food_locations.sort(function(a,b){ //Prioritize quality food sources
             return grid.grid[b[1]][b[0]].quality - grid.grid[a[1]][a[0]].quality
         });
         for(var i = 0; i < food_locations.length; i++){
@@ -303,7 +311,9 @@ router.route('/process-grid').post(async (req,res) => {
             bee.action = waiting_bees[i].action;
         }
     }
-    
+    for(var i = 0; i < dead_bees_index.length; i++){
+        hive.array.slice(dead_bees_index[i], 1);
+    }
 
     //Grid Update
     if(grid.tick >= 50){
