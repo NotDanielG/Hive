@@ -23,15 +23,17 @@ export default class Cell extends Component {
                 gridColumnEnd: col+1,
                 gridRowStart: row,
                 gridRowEnd: row+1,
-                backgroundColor: 'rgba(' +value+ ', 255, '+value +', 1)'
+                backgroundColor: 'rgba(' +value+ ', 255, '+value +', 1)',
+                width:191+'px',
+                height:135+'px'
             }
         };
         this.refCallback = element => {
             if (element) {
             //   this.props.getSize(element.getBoundingClientRect().width);
                 // console.log("WIDTH IS: " + element.getBoundingClientRect().width);
-                this.width = element.getBoundingClientRect().width;
-                this.height =  element.getBoundingClientRect().height;
+                // this.width = element.getBoundingClientRect().width;
+                // this.height =  element.getBoundingClientRect().height;
             }
         };
         return (

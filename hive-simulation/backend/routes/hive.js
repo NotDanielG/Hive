@@ -10,8 +10,8 @@ let capacity = 16;
 let BEE_UPKEEP = 4;
 let BEE_ENERGY_MAX = 10;
 let MAX_BEE = 500;
-let BEE_SPEED = 15;
-let MARGIN_ERROR = 10;
+let BEE_SPEED = 12;
+let MARGIN_ERROR = 20;
 
 let NORTH = 0;
 let EAST = 1;
@@ -71,11 +71,14 @@ router.route('/process-grid').post(async (req,res) => {
         // console.log("GRID INFO: " + grid.hive);
     });
     //Bee Update
+    // console.log(" ");
+    var food_locations = [];
+    var waiting_bees = [];
+    var waiting_bees_index = [];
     for(var i = 0; i < hive.array.length; i++){
         var bee = hive.array[i];
-        // console.log('Intent: ' + bee.intent);
-        // console.log('Action: ' + bee.action);
         var doIntent = false;
+        // console.log(bee.xLocation + ' ' + bee.yLocation + ' '+ bee.xDestination + ' ' + bee.yDestination + ' ' + bee.intent + ' ' + bee.action);
         switch(bee.action){
             case('Pending'):
                 var xDifference = bee.xDestination - bee.xLocation;
@@ -93,6 +96,11 @@ router.route('/process-grid').post(async (req,res) => {
                     bee.action = 'Completed';
                     doIntent = true;
                 }
+                bee.tick+=1;
+                if(bee.tick >= 50){
+                    bee.tick = 0;
+                    bee.energy -= 1;
+                }
                 break;
             case('Completed'):
                 doIntent = true;
@@ -102,100 +110,199 @@ router.route('/process-grid').post(async (req,res) => {
                 break;
         }
         if(doIntent){
-            switch(bee.intent){
-                case('Searching'):
-                    if(isValidCell(grid, bee)){
-                        bee.intent = 'Deposit';
-                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
-                        bee.nectar += capacity;
+            if(bee.energy <= BEE_ENERGY_MAX*.3 && bee.intent != 'Recovering' && bee.intent != 'Waiting'){ //Go to recovery phase, save old info
+                bee.prevIntent = bee.intent;
+                bee.prevXLocationGrid = bee.xLocationGrid;
+                bee.prevYLocationGrid = bee.yLocationGrid;
 
-                        bee.xLocationFood = bee.xLocationGrid;
-                        bee.yLocationFood = bee.yLocationGrid;
+                bee.intent = 'Recovering';
+                bee.action = 'Pending';
+                bee.xLocationGrid = GRID_CENTER;
+                bee.yLocationGrid = GRID_CENTER;
+                bee.xDestination = GRID_CENTER * width + randomXCoordHive();
+                bee.yDestination = GRID_CENTER * height + randomYCoordHive();
+            }
+            else{
+                switch(bee.intent){
+                    case('Searching'):
+                        if(isValidCell(grid, bee)){
+                            bee.intent = 'Deposit';
+                            grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
+                            bee.nectar += capacity;
 
-                        var xCoord = getRandomNumber(80, 110);
-                        var yCoord = getRandomNumber(50, 70);
-                        bee.xDestination = GRID_CENTER * width + xCoord;
-                        bee.yDestination = GRID_CENTER * height + yCoord;
-                        bee.action = 'Pending';
-                    }
-                    else{
-                        var array = getValidDirections(bee);
+                            bee.xLocationFood = bee.xLocationGrid;
+                            bee.yLocationFood = bee.yLocationGrid;
 
-                        var selection = selectDirection(array, bee, grid);
-                        if(selection == -1){
-                            selection = array[getRandomNumber(0, array.length)];
+                            var xCoord = getRandomNumber(80, 110);
+                            var yCoord = getRandomNumber(50, 70);
+                            bee.xDestination = GRID_CENTER * width + xCoord;
+                            bee.yDestination = GRID_CENTER * height + yCoord;
+                            bee.action = 'Pending';
                         }
-                        var xDirection = 0;
-                        var yDirection = 0;
+                        else{
+                            var array = getValidDirections(bee);
+
+                            var selection = selectDirection(array, bee, grid);
+                            if(selection == -1){
+                                selection = array[getRandomNumber(0, array.length)];
+                            }
+                            var xDirection = 0;
+                            var yDirection = 0;
+                            
+                            if(selection == NORTH){
+                                bee.cameFrom = "SOUTH";
+                                yDirection = -1;
+                            }
+                            if(selection == EAST){
+                                bee.cameFrom = "WEST";
+                                xDirection = 1;
+                            }
+                            if(selection == SOUTH){
+                                bee.cameFrom = "NORTH";
+                                yDirection = 1;
+                            }
+                            if(selection == WEST){
+                                bee.cameFrom = "EAST";
+                                xDirection = -1;
+                            }
+                            bee.xLocationGrid += yDirection;
+                            bee.yLocationGrid += xDirection;
+
+                            var xCoord = randomXCoord();
+                            var yCoord = randomYCoord();
+
+                            bee.xDestination = bee.yLocationGrid * width + xCoord;
+                            bee.yDestination = bee.xLocationGrid * height + yCoord;
+                            
+                            bee.action = 'Pending';
+                        }
+                        break;
+                    case('Foraging'): //Once action is completed, foraging is intent. 
+                        if(isValidCell(grid, bee)){
+                            bee.intent = 'Deposit';
+                            grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
+                            grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinated = true;
+                            grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinationCounter += .01;
+                            bee.nectar += capacity;
+
+                            bee.xLocationFood = bee.xLocationGrid;
+                            bee.yLocationFood = bee.yLocationGrid;
+                            bee.quality = grid.grid[bee.xLocationGrid][bee.yLocationGrid].quality;
+
+                            var xCoord = getRandomNumber(80, 110);
+                            var yCoord = getRandomNumber(50, 70);
+                            bee.xDestination = GRID_CENTER * width + xCoord;
+                            bee.yDestination = GRID_CENTER * height + yCoord;
+                            bee.action = 'Pending';
+                        }
+                        else{
+                            bee.intent = 'Searching';
+                        }
+                        break;
+                    case('Waiting'): //Either go back to old task OR get shared something
+                        //Loop of waiting to depo/foraging to recovery, need to fix
+                        //Once another bee deposits, check if there is enough energy yet
+                        var energy_required = BEE_ENERGY_MAX-bee.energy;
+                        // console.log("WAITING BEE'S ENERGY " + bee.energy);
+                        if(energy_required <= hive.honey){
+                            bee.energy += energy_required;
+                            hive.honey -= energy_required;
+                        }
+                        waiting_bees.push(bee);
+                        waiting_bees_index.push(i);
+                        break;
+                    case('Recovering'):
+                        var energy_required = BEE_ENERGY_MAX-bee.energy;
+                        if(energy_required <= hive.honey){
+                            bee.energy += energy_required;
+                            hive.honey -= energy_required;
+                            bee.intent = bee.prevIntent;
+                            bee.xLocationGrid = bee.prevXLocationGrid;
+                            bee.yLocationGrid = bee.prevYLocationGrid;
+
+                            bee.xDestination = bee.yLocationGrid*191+randomXCoord();
+                            bee.yDestination = bee.xLocationGrid*135+randomYCoord();
+                            bee.action = 'Pending';
+                        }
+                        else{
+                            bee.intent = 'Waiting'; 
+                            bee.action = 'Completed';
+                        }
                         
-                        if(selection == NORTH){
-                            bee.cameFrom = "SOUTH";
-                            yDirection = -1;
-                        }
-                        if(selection == EAST){
-                            bee.cameFrom = "WEST";
-                            xDirection = 1;
-                        }
-                        if(selection == SOUTH){
-                            bee.cameFrom = "NORTH";
-                            yDirection = 1;
-                        }
-                        if(selection == WEST){
-                            bee.cameFrom = "EAST";
-                            xDirection = -1;
-                        }
-                        bee.xLocationGrid += yDirection;
-                        bee.yLocationGrid += xDirection;
+                        break;
+                    case('Deposit'):
+                        var energy_required = BEE_ENERGY_MAX-bee.energy;
+                        bee.energy += energy_required;
+                        bee.nectar -= energy_required;
 
-                        var xCoord = randomXCoord();
-                        var yCoord = randomYCoord();
+                        hive.honey += bee.nectar;
+                        bee.nectar = 0;
 
-                        bee.xDestination = bee.yLocationGrid * width + xCoord;
-                        bee.yDestination = bee.xLocationGrid * height + yCoord;
-                        
+                        var xCoord = getRandomNumber(30, 160);
+                        var yCoord = getRandomNumber(30, 110);
+
+                        bee.xDestination = bee.yLocationFood * width + xCoord;
+                        bee.yDestination = bee.xLocationFood * height + yCoord;
+                        bee.intent = 'Foraging';
                         bee.action = 'Pending';
-                    }
-                    
+                        if(!food_locations.includes([bee.yLocationFood, bee.xLocationFood])){
+                            food_locations.push([bee.yLocationFood, bee.xLocationFood]);
+                        }
+                        break;
+                }   
+            }
+        }
+    }
+    //Bee gets shared locations
+    //Need to fix sharing
+    if(food_locations.length > 0){
+        // food_locations.sort(function(a,b){
+        //     return grid.grid[b[1]][b[0]].quality - grid.grid[a[1]][a[0]].quality
+        // });
+        for(var i = 0; i < food_locations.length; i++){
+            var max = 5;
+            for(var j = 0; j < waiting_bees.length; j++){
+                if(max <= 0){
                     break;
-                case('Foraging'): //Once action is completed, foraging is intent. 
-                    if(isValidCell(grid, bee)){
-                        bee.intent = 'Deposit';
-                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].nectar -= capacity;
-                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinated = true;
-                        grid.grid[bee.xLocationGrid][bee.yLocationGrid].pollinationCounter += .01;
-                        bee.nectar += capacity;
+                }
+                var energy_required = BEE_ENERGY_MAX-bee.energy;
+                if(energy_required <= hive.honey){
+                    waiting_bees[j].energy += energy_required;
+                    hive.honey -= energy_required;
+                }
+                if( waiting_bees[j].energy >= BEE_ENERGY_MAX*.5){
+                    waiting_bees[j].xLocationFood = food_locations[i][1];
+                    waiting_bees[j].yLocationFood = food_locations[i][0];
+                    waiting_bees[j].intent = 'Foraging'; //Deposits 0 nectar
+                    waiting_bees[j].action = 'Pending';
 
-                        bee.xLocationFood = bee.xLocationGrid;
-                        bee.yLocationFood = bee.yLocationGrid;
-                        bee.quality = grid.grid[bee.xLocationGrid][bee.yLocationGrid].quality;
-
-                        var xCoord = getRandomNumber(80, 110);
-                        var yCoord = getRandomNumber(50, 70);
-                        bee.xDestination = GRID_CENTER * width + xCoord;
-                        bee.yDestination = GRID_CENTER * height + yCoord;
-                        bee.action = 'Pending';
-                    }
-                    else{
-                        bee.intent = 'Searching';
-                    }
-                    break;
-                case('Waiting'):
-                    break;
-                case('Deposit'):
-                    hive.honey += capacity;
-                    bee.nectar -= bee.nectar;
+                    waiting_bees[j].xLocationGrid = food_locations[i][1];
+                    waiting_bees[j].yLocationGrid = food_locations[i][0];
 
                     var xCoord = getRandomNumber(30, 160);
                     var yCoord = getRandomNumber(30, 110);
 
-                    bee.xDestination = bee.yLocationFood * width + xCoord;
-                    bee.yDestination = bee.xLocationFood * height + yCoord;
-                    bee.intent = 'Foraging';
-                    bee.action = 'Pending';
-                    break;
-            }   
+                    waiting_bees[j].xDestination = waiting_bees[j].yLocationFood * width + xCoord;
+                    waiting_bees[j].yDestination = waiting_bees[j].xLocationFood * height + yCoord;
+                    max-=1;
+                }
+            }
+        }
+        for(var i = 0; i < waiting_bees_index.length; i++){
+            // hive.array[waiting_bees_index[i]] = waiting_bees[i];
+            var bee = hive.array[waiting_bees_index[i]];
+            bee.energy = waiting_bees[i].energy;
+            bee.xLocationFood = waiting_bees[i].xLocationFood;
+            bee.yLocationFood = waiting_bees[i].yLocationFood;
+
+            bee.xDestination = waiting_bees[i].xDestination;
+            bee.yDestination = waiting_bees[i].yDestination;
+    
+            bee.intent = waiting_bees[i].intent;
+            bee.action = waiting_bees[i].action;
         }
     }
+    
 
     //Grid Update
     if(grid.tick >= 50){
@@ -209,15 +316,14 @@ router.route('/process-grid').post(async (req,res) => {
         hive.array.push(bee);
         hive.honey -= capacity;
     }
-    var current_grid_tick = grid.tick+1;
 
+    var current_grid_tick = grid.tick+1;
     Hive.updateOne({hive: req.body.params.hive}, {$set:{array: hive.array, honey: hive.honey}})
         .catch(err => console.log('Error saving Hive' + err ));
     Grid.updateOne({hive: req.body.params.hive}, {$set:{grid: grid.grid, tick: current_grid_tick}})
         .catch(err => console.log('Error saving Grid' + err ));
     
     res.end();
-    
 });
 
 router.route('/add-bee').post((req, res) => {
@@ -256,7 +362,7 @@ router.route('/add-new-hive').post((req, res) => {
     newHive.save()
         .then(() => {
             var size = GRID_SIZE;
-            var food_amount = 3;
+            var food_amount = 1;
             const grid = [];
 
             for(var i = 0; i < size; i++){
@@ -302,6 +408,14 @@ function randomXCoord(){
 }
 function randomYCoord(){
     var yCoord = getRandomNumber(30, 110);
+    return yCoord;
+}
+function randomXCoordHive(){
+    var xCoord = getRandomNumber(80, 110);
+    return xCoord;
+}
+function randomYCoordHive(){
+    var yCoord = getRandomNumber(50, 70);
     return yCoord;
 }
 function updateGrid(grid){
@@ -371,8 +485,8 @@ function selectDirection(array, bee, grid){
             case(EAST):
                 if(grid[xBee][yBee+1].flowerCount > 0 && grid[xBee][yBee+1].quality > quality){
                     foodDirection = EAST;
-                    flowerCount = grid[xBee+1][yBee].flowerCount;
-                    quality = grid[xBee+1][yBee].quality;
+                    flowerCount = grid[xBee][yBee+1].flowerCount;
+                    quality = grid[xBee][yBee+1].quality;
                 }
                 break;
             case(WEST):
@@ -510,6 +624,7 @@ function generateBee(){
 
     return new Bee(BEE_ENERGY_MAX, cameFrom, "Searching", "Pending", false, GRID_CENTER * 191 + xCoord, GRID_CENTER * 135 + yCoord, GRID_CENTER+yDir, GRID_CENTER+xDir, -1, -1, xDest, yDest, 0);
 }
+
 async function getHive(req){
     var val = null
     await Hive.findOne({hive: req.body.params.hive})
@@ -573,6 +688,12 @@ class Bee{
         this.tick = 0;
         this.recover_full = false;
         this.nectar = 0;
+
+        //Fields meant for recovery, to let the bees go back to what they were doing
+        this.prevIntent = ""; 
+        this.prevLocationGrid = -1;
+        this.prevLocationGrid = -1;
+
     }
 }
 module.exports = router;

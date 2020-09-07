@@ -101,7 +101,7 @@ export default class Map extends Component {
                         {this.state.bees}
                     </div>
                 </div>
-                <div className = "cell-info"></div>
+                {/* <div className = "cell-info"></div> */}
             </div>
         )
     }

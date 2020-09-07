@@ -3,7 +3,7 @@
     height:100vh;
 }
 .id-tag{
-    width:15%;
+    width:10%;
     height:100%;
     float: left;
     background-color: #282c34;
@@ -11,17 +11,20 @@
 .grid-container{
     position: relative;
     float:left;
-    width:70%;
+    /* width:70%; */
     height:100%;
 }
 .grid{
     width:100%;
+    /* width:1000px; */
     height:100%;
     background-color: white;
     
     display: grid;
-    grid-template-columns: 14%;
-    grid-template-rows: 14%;
+    /* grid-template-columns: 14%; */
+    /* grid-template-rows: 14%; */
+    /* grid-template-columns: 191px;
+    grid-template-rows: 135px; */
 }
 .cell-info{
     width:15%;
