@@ -2,7 +2,6 @@
 Intelligent agents meant to simulate hive behavior. The agents'(bees) intents are based on a state machine. Surrounding values and their own characteristics determine the behavior the agents will take. 
 
 
-
 ## Intents/Behavior
 
 ### Searching
@@ -22,6 +21,15 @@ Bees in the Waiting intent will sit on the hive until a Bee with a Deposit inten
 
 ### Death
 Death occurs when a Bee has no more energy. It will be removed from the grid as a result.
+
+## Actions
+Whenever bees move, they are doing an action.
+
+### Pending
+Bee is currently in motion to a location. Since the bee is in motion, it is expending energy depending on an interval.
+
+### Completed
+Bee is done with its movement. Its intent will then determine its behavior as listed above.
 
 ## Requirements
 Node modules: 
