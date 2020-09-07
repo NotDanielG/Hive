@@ -3,7 +3,7 @@
     height:100vh;
 }
 .id-tag{
-    width:10%;
+    width:15%;
     height:100%;
     float: left;
     background-color: #282c34;
@@ -11,15 +11,14 @@
 .grid-container{
     position: relative;
     float:left;
-    /* width:70%; */
+    width:70%;
     height:100%;
 }
 .grid{
     width:100%;
-    /* width:1000px; */
     height:100%;
     background-color: white;
-    
+    /* float:left; */
     display: grid;
     /* grid-template-columns: 14%; */
     /* grid-template-rows: 14%; */

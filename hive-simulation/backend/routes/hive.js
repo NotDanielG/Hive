@@ -257,9 +257,9 @@ router.route('/process-grid').post(async (req,res) => {
     //Bee gets shared locations
     //Need to fix sharing
     if(food_locations.length > 0){
-        // food_locations.sort(function(a,b){
-        //     return grid.grid[b[1]][b[0]].quality - grid.grid[a[1]][a[0]].quality
-        // });
+        food_locations.sort(function(a,b){
+            return grid.grid[b[1]][b[0]].quality - grid.grid[a[1]][a[0]].quality
+        });
         for(var i = 0; i < food_locations.length; i++){
             var max = 5;
             for(var j = 0; j < waiting_bees.length; j++){
