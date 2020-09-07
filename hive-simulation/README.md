@@ -1,68 +1,47 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Project Overview
+Intelligent agents meant to simulate hive behavior. The agents'(bees) intents are based on a state machine. Surrounding values and their own characteristics determine the behavior the agents will take. 
+
+
+
+## Intents/Behavior
+
+### Searching
+Bees will search the grid for a potential food source. Bees have a range of 1 cell. Bees will not go to a cell they originally came from.
+
+### Deposit
+Bees deposit nectar to the hive and refill their energy reserves. It will share the food location to any bees with the Waiting intent. Then it goes to the Foraging intent.
+
+### Foraging
+Bee goes to the food location cell. If the bee cannot get a full inventory of nectar from the flowers of this location, it will change to the Searching intent. Else it will gather nectar, pollinate the cell and switch to the Deposit intent. Mores bees leads to more pollination. More pollination leads to more flowers. More flowers leads to more nectar.
+
+### Recovering
+If bee is searching and its energy goes below a certain threshold, it will return back to the hive to refill its energy. If there is enough honey in the hive, it will go back to its previous behavior. Else it will go to the Waiting intent.
+
+### Waiting 
+Bees in the Waiting intent will sit on the hive until a Bee with a Deposit intent completes the Deposit intent. The Deposit intent bee will give the food location. This acts as the way bees share new food locations to other bees at the hive(bees normally do this in a form of a dance). Waiting Bees will prioritize higher quality food sources and use the nectar from the Depositing bee to refill itself.
+
+### Death
+Death occurs when a Bee has no more energy. It will be removed from the grid as a result.
+
+## Requirements
+Node modules: 
+cors, express, mongoose in the backend directory
+react-start in hive-simulation directory
+
+Misc. File:
+A .env text file connecting a mongodb database to the application
 
 ## Available Scripts
 
 In the project directory, you can run:
 
-### `yarn start`
+### `npm start` 
 
 Runs the app in the development mode.<br />
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+In the backend directory, you can run:
 
-### `yarn test`
+### `nodemon server` or `node server`
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `yarn build`
-
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+Runs the server
