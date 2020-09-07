@@ -12,6 +12,7 @@ let BEE_ENERGY_MAX = 10;
 let MAX_BEE = 500;
 let BEE_SPEED = 12;
 let MARGIN_ERROR = 20;
+let FOOD_AMOUNT = 3;
 
 let NORTH = 0;
 let EAST = 1;
@@ -362,7 +363,6 @@ router.route('/add-new-hive').post((req, res) => {
     newHive.save()
         .then(() => {
             var size = GRID_SIZE;
-            var food_amount = 1;
             const grid = [];
 
             for(var i = 0; i < size; i++){
@@ -371,7 +371,7 @@ router.route('/add-new-hive').post((req, res) => {
                     grid[i][j] = getNewCell(0, 0, false, i, j);
                 }
             }
-            for(var i = 0; i < food_amount; i++){
+            for(var i = 0; i < FOOD_AMOUNT; i++){
                 var x, y = -1;
                 while(x == -1 || y == -1 || (x == GRID_CENTER, y == GRID_CENTER)){
                     x = getRandomNumber(0, size);
