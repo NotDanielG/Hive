@@ -9,10 +9,17 @@ let GRID_CENTER = Math.floor(GRID_SIZE/2);
 let capacity = 16;
 let BEE_UPKEEP = 4;
 let BEE_ENERGY_MAX = 10;
-let MAX_BEE = 500;
+let MAX_BEE = 200;
 let BEE_SPEED = 12;
 let MARGIN_ERROR = 20;
-let FOOD_AMOUNT = 3;
+
+//Options
+let MAX_FOOD = 10;
+let MAX_STARTING_BEES = 20;
+let MAX_HONEY = 300;
+let MIN_FOOD = 3;
+let MIN_STARTING_BEES = 1;
+let MIN_HONEY = 100;
 
 let NORTH = 0;
 let EAST = 1;
@@ -357,16 +364,42 @@ router.route('/add-bee').post((req, res) => {
 });
 
 router.route('/add-new-hive').post((req, res) => {
+    //Options should be honey amount, # of food cells, and starting amount of bees
+    //---Put
+    var honey = req.body.starting_honey;
+    var bee_amount = req.body.starting_bees;
+    var food_amount = req.body.food_amount;
+    if(honey > MAX_HONEY){
+        honey = MAX_HONEY;
+    }
+    if(bee_amount > MAX_STARTING_BEES){
+        bee_amount = MAX_STARTING_BEES;
+    }
+    if(food_amount > MAX_FOOD){
+        food_amount = MAX_FOOD;
+    }
+    if(honey < 0){
+        honey = MIN_HONEY;
+    }
+    if(bee_amount < 0){
+        bee_amount = MIN_STARTING_BEES;
+    }
+    if(food_amount < 0){
+        food_amount = MIN_FOOD;
+    }
+    
     var str = "";
     for(var i = 0; i < MAX_LENGTH; i++){
         str+=characters.charAt(Math.floor(Math.random()*characters.length));
     }
-    const honey = 100;
     const x = GRID_CENTER;
-    const array = [];
-    const y = GRID_CENTER; 
-    var bee = generateBee();
-    array.push(bee);
+    const y = GRID_CENTER;
+    const array = []; 
+    for(var i = 0; i < bee_amount; i++){
+        var bee = generateBee();
+        array.push(bee);
+    }
+
     
     const newHive = new Hive({hive:str, honey:honey, array:array, xLocationGrid:x, yLocationGrid:y});
 
@@ -381,11 +414,15 @@ router.route('/add-new-hive').post((req, res) => {
                     grid[i][j] = getNewCell(0, 0, false, i, j);
                 }
             }
-            for(var i = 0; i < FOOD_AMOUNT; i++){
+            for(var i = 0; i < food_amount; i++){
                 var x, y = -1;
                 while(x == -1 || y == -1 || (x == GRID_CENTER, y == GRID_CENTER)){
                     x = getRandomNumber(0, size);
                     y = getRandomNumber(0, size);
+                    if(grid[x][y].flowerCount > 0){
+                        x = -1;
+                        y = -1;
+                    }
                 }
                 grid[x][y] = setRandomStat(grid[x][y]);
             }
