@@ -9,7 +9,7 @@ let GRID_CENTER = Math.floor(GRID_SIZE/2);
 let capacity = 16;
 let BEE_UPKEEP = 4;
 let BEE_ENERGY_MAX = 10;
-let MAX_BEE = 200;
+let MAX_BEE = 400;
 let BEE_SPEED = 12;
 let MARGIN_ERROR = 20;
 
@@ -159,10 +159,13 @@ router.route('/process-grid').post(async (req,res) => {
                         }
                         else{
                             var array = getValidDirections(bee);
-
-                            var selection = selectDirection(array, bee, grid);
-                            if(selection == -1){
+                            var selection = 0;
+                            var selections = selectDirection(array, bee, grid);
+                            if(selections.length == 0){
                                 selection = array[getRandomNumber(0, array.length)];
+                            }
+                            else{
+                                selection = selections[getRandomNumber(0, selections.length)];
                             }
                             var xDirection = 0;
                             var yDirection = 0;
@@ -507,6 +510,7 @@ function selectDirection(array, bee, grid){
     //SOUTH 0, 1
     //WEST -1, 0
     var flowerCount = 0;
+    var foodDirections = [];
     var foodDirection = -1;
     var quality = 0; //Feature to be added
     var grid = grid.grid;
@@ -517,35 +521,39 @@ function selectDirection(array, bee, grid){
         switch(array[i]){
             case(NORTH):
                 if(grid[xBee-1][yBee].flowerCount > 0 && grid[xBee-1][yBee].quality > quality){
-                    foodDirection = NORTH;
+                    // foodDirection = NORTH;
+                    foodDirections.push(NORTH);
                     flowerCount = grid[xBee-1][yBee].flowerCount;
                     quality = grid[xBee-1][yBee].quality;
                 }
                 break;
             case(SOUTH):
                 if(grid[xBee+1][yBee].flowerCount > 0 && grid[xBee+1][yBee].quality > quality){
-                    foodDirection = SOUTH;
+                    // foodDirection = SOUTH;
+                    foodDirections.push(SOUTH);
                     flowerCount = grid[xBee+1][yBee].flowerCount;
                     quality = grid[xBee+1][yBee].quality;
                 }
                 break;
             case(EAST):
                 if(grid[xBee][yBee+1].flowerCount > 0 && grid[xBee][yBee+1].quality > quality){
-                    foodDirection = EAST;
+                    // foodDirection = EAST;
+                    foodDirections.push(EAST);
                     flowerCount = grid[xBee][yBee+1].flowerCount;
                     quality = grid[xBee][yBee+1].quality;
                 }
                 break;
             case(WEST):
                 if(grid[xBee][yBee-1].flowerCount > 0 && grid[xBee][yBee-1].quality > quality){
-                    foodDirection = WEST;
+                    // foodDirection = WEST;
+                    foodDirections.push(WEST);
                     flowerCount = grid[xBee][yBee-1].flowerCount;
                     quality = grid[xBee][yBee-1].quality;
                 }
                 break;
         }
     }
-    return foodDirection;
+    return foodDirections;
 }
 function getValidDirections(bee){
     var directions = [];
